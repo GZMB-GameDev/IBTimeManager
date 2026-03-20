@@ -1,0 +1,2105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>青少年时间规划助手 · 最终完美版</title>
+    <!-- 字体与图标 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- 使用 xlsx-style 支持样式的版本 -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-style@0.8.13/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js"></script>
+    <style>
+        /* 完整样式，包含归档复选框优化 */
+        :root {
+            --primary-50: #eff6ff; --primary-100: #dbeafe; --primary-200: #bfdbfe; --primary-300: #93c5fd; --primary-400: #60a5fa; --primary-500: #3b82f6; --primary-600: #2563eb; --primary-700: #1d4ed8; --primary-800: #1e3a8a; --primary-900: #1e3a8a;
+            --success-500: #10b981; --danger-500: #ef4444; --warning-500: #f59e0b;
+            --gray-50: #f9fafb; --gray-100: #f3f4f6; --gray-200: #e5e7eb; --gray-300: #d1d5db; --gray-400: #9ca3af; --gray-500: #6b7280; --gray-600: #4b5563; --gray-700: #374151; --gray-800: #1f2937; --gray-900: #111827;
+            --bg-body: linear-gradient(135deg, #f6f9fc 0%, #e6f0f9 100%);
+            --bg-container: rgba(255,255,255,0.9);
+            --bg-card: rgba(255,255,255,0.8);
+            --text-primary: var(--gray-800);
+            --text-secondary: var(--gray-600);
+            --border-light: rgba(0,0,0,0.1);
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.1);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+            --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+        }
+        [data-theme="dark"] { /* 暗色模式变量可自行扩展 */ }
+        [data-primary="green"] { --primary-500: #10b981; --primary-600: #059669; --primary-700: #047857; }
+        [data-primary="purple"] { --primary-500: #8b5cf6; --primary-600: #7c3aed; --primary-700: #6d28d9; }
+        [data-primary="orange"] { --primary-500: #f97316; --primary-600: #ea580c; --primary-700: #c2410c; }
+        .animation-subtle .container { animation: fadeInScale 0.5s ease; }
+        .animation-bouncy .container { animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55); }
+        .animation-off * { animation: none !important; }
+        @keyframes fadeInScale { 0% { opacity: 0; transform: scale(0.98); } 100% { opacity: 1; transform: scale(1); } }
+        @keyframes bounceIn { 0% { opacity: 0; transform: scale(0.3); } 50% { opacity: 1; transform: scale(1.05); } 70% { transform: scale(0.9); } 100% { transform: scale(1); } }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-body);
+            color: var(--text-primary);
+            line-height: 1.5;
+            min-height: 100vh;
+            padding: 20px;
+            transition: background 0.3s, color 0.3s;
+        }
+        .container {
+            max-width: 1440px;
+            margin: 0 auto;
+            background: var(--bg-container);
+            backdrop-filter: blur(10px);
+            border-radius: 48px;
+            box-shadow: var(--shadow-xl);
+            overflow: hidden;
+            border: 1px solid var(--border-light);
+        }
+        .app-header {
+            padding: 20px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border-light);
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .app-header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary-500), var(--primary-700));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            white-space: nowrap;
+        }
+        .header-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .header-actions button {
+            background: var(--bg-card);
+            border: 1px solid var(--border-light);
+            padding: 10px 16px;
+            border-radius: 40px;
+            color: var(--text-primary);
+            cursor: pointer;
+            backdrop-filter: blur(4px);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .header-actions button:hover {
+            background: var(--primary-500);
+            color: white;
+            transform: translateY(-2px);
+        }
+        .app-wrapper { display: flex; }
+        .sidebar {
+            width: 220px;
+            background: var(--bg-card);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid var(--border-light);
+            padding: 20px 12px;
+            flex-shrink: 0;
+        }
+        .sidebar-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            margin: 4px 0;
+            border-radius: 30px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+        .sidebar-item i { width: 24px; font-size: 1.2rem; }
+        .sidebar-item:hover { background: var(--primary-100); color: var(--primary-700); }
+        .sidebar-item.active { background: var(--primary-500); color: white; }
+        .main-content {
+            flex: 1;
+            padding: 32px;
+            min-width: 0;
+        }
+        .main-view, .archive-view { display: none; }
+        .main-view.active, .archive-view.active { display: block; }
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 24px;
+        }
+        .card {
+            background: var(--bg-card);
+            backdrop-filter: blur(8px);
+            border-radius: 32px;
+            padding: 24px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-light);
+            transition: all 0.2s;
+        }
+        .card:hover { box-shadow: var(--shadow-md); }
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .card-header i { font-size: 1.8rem; color: var(--primary-500); }
+        .card-header h2 { font-size: 1.4rem; font-weight: 600; }
+        .form-group { margin-bottom: 16px; }
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--border-light);
+            border-radius: 24px;
+            background: var(--bg-card);
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            outline: none;
+            transition: all 0.2s;
+        }
+        input:focus, select:focus { border-color: var(--primary-500); box-shadow: 0 0 0 3px var(--primary-200); }
+        .form-row { display: flex; gap: 12px; flex-wrap: wrap; }
+        .form-row .form-group { flex: 1 1 200px; min-width: 150px; }
+        button {
+            background: var(--primary-500);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 40px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+        button:hover { background: var(--primary-600); transform: translateY(-2px); }
+        .btn-success { background: var(--success-500); }
+        .btn-success:hover { background: #0d9488; }
+        .btn-danger { background: var(--danger-500); }
+        .btn-danger:hover { background: #dc2626; }
+        .btn-warning { background: var(--warning-500); }
+        .btn-warning:hover { background: #d97706; }
+        .btn-info {
+            background: var(--bg-card);
+            color: var(--text-primary);
+            border: 1px solid var(--border-light);
+        }
+        .btn-info:hover { background: var(--primary-100); color: var(--primary-700); }
+        .goal-list { margin-top: 20px; }
+        .goal-item {
+            background: var(--bg-card);
+            border-radius: 24px;
+            padding: 16px;
+            margin-bottom: 12px;
+            border-left: 6px solid var(--primary-500);
+            box-shadow: var(--shadow-sm);
+            transition: all 0.2s;
+        }
+        .goal-item:hover { transform: translateX(4px); box-shadow: var(--shadow-md); }
+        .goal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .goal-header strong { font-size: 1.1rem; }
+        .goal-header > div:last-child {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .goal-meta {
+            display: flex;
+            gap: 20px;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            flex-wrap: wrap;
+        }
+        .subgoal-list { margin-left: 16px; margin-top: 12px; }
+        .subgoal-item {
+            background: var(--gray-50);
+            border-radius: 20px;
+            padding: 10px 14px;
+            margin: 6px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid var(--border-light);
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .subgoal-item > div:first-child {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .subgoal-item > div:last-child {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .priority-high { color: var(--danger-500); font-weight: 600; }
+        .priority-medium { color: var(--warning-500); font-weight: 600; }
+        .priority-low { color: var(--success-500); font-weight: 600; }
+        .plan-table-container { overflow-x: auto; margin-top: 16px; }
+        .plan-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--bg-card);
+            border-radius: 24px;
+            overflow: hidden;
+            min-width: 600px;
+        }
+        .plan-table th {
+            background: var(--primary-500);
+            color: white;
+            font-weight: 600;
+            padding: 16px;
+            text-align: left;
+        }
+        .plan-table td {
+            padding: 16px;
+            border-bottom: 1px solid var(--border-light);
+        }
+        .task-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+        }
+        .task-checkbox {
+            appearance: none;
+            width: 22px;
+            height: 22px;
+            border: 2px solid var(--primary-500);
+            border-radius: 6px;
+            cursor: pointer;
+            background: var(--bg-card);
+            transition: all 0.2s;
+            position: relative;
+            flex-shrink: 0;
+        }
+        .task-checkbox:checked {
+            background: var(--success-500);
+            border-color: var(--success-500);
+        }
+        .task-checkbox:checked::after {
+            content: '✓';
+            position: absolute;
+            color: white;
+            font-size: 16px;
+            top: 0px;
+            left: 3px;
+        }
+        .task-label { flex: 1; min-width: 150px; word-break: break-word; }
+        .task-completed { text-decoration: line-through; opacity: 0.6; }
+        /* 归档条目样式（优化复选框） */
+        .archive-item {
+            background: var(--bg-card);
+            border-radius: 24px;
+            padding: 16px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-left: 6px solid var(--primary-500);
+            box-shadow: var(--shadow-sm);
+            transition: all 0.2s;
+        }
+        .archive-item:hover { box-shadow: var(--shadow-md); }
+        .archive-checkbox {
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border: 2px solid var(--primary-400);
+            border-radius: 8px;
+            background: var(--bg-card);
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            flex-shrink: 0;
+        }
+        .archive-checkbox:checked {
+            background: var(--success-500);
+            border-color: var(--success-500);
+            transform: scale(1.05);
+        }
+        .archive-checkbox:checked::after {
+            content: '✓';
+            position: absolute;
+            color: white;
+            font-size: 16px;
+            top: 1px;
+            left: 4px;
+        }
+        .archive-checkbox:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px var(--primary-200);
+        }
+        .archive-item-content {
+            flex: 1;
+            min-width: 200px;
+        }
+        .archive-item-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 16px;
+        }
+        .modal-content {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border-radius: 40px;
+            padding: 32px;
+            max-width: 480px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-xl);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: var(--text-secondary);
+        }
+        .modal-close:hover { color: var(--danger-500); }
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 52px;
+            height: 28px;
+            flex-shrink: 0;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: var(--gray-300);
+            border-radius: 34px;
+            transition: .3s;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 3px;
+            bottom: 3px;
+            background: white;
+            border-radius: 50%;
+            transition: .3s;
+        }
+        input:checked + .slider { background: var(--success-500); }
+        input:checked + .slider:before { transform: translateX(24px); }
+        .color-options {
+            display: flex;
+            gap: 12px;
+            margin: 10px 0;
+            flex-wrap: wrap;
+        }
+        .color-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .color-btn.selected { border-color: var(--text-primary); transform: scale(1.2); }
+        .reminder-banner {
+            background: var(--warning-500);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 40px;
+            margin: 16px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .success-message, .error-message, .filter-info {
+            padding: 12px 20px;
+            border-radius: 40px;
+            margin: 16px 0;
+        }
+        .success-message { background: var(--success-500); color: white; }
+        .error-message { background: var(--danger-500); color: white; }
+        .filter-info { background: var(--primary-100); color: var(--primary-800); }
+        .hidden { display: none !important; }
+        .version-tag {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            background: rgba(255,255,255,0.3);
+            padding: 4px 12px;
+            border-radius: 30px;
+            backdrop-filter: blur(4px);
+            z-index: 100;
+        }
+        @media (max-width: 1024px) {
+            .content-grid { grid-template-columns: 1fr; }
+            .main-content { max-width: 100%; padding: 20px; }
+            .sidebar { width: 100%; display: flex; padding: 12px; overflow-x: auto; }
+            .sidebar-item { flex: 0 0 auto; }
+        }
+        @media (max-width: 768px) {
+            .app-header h1 { font-size: 1.4rem; white-space: normal; }
+            .header-actions button { padding: 8px 12px; font-size: 0.9rem; }
+            .card { padding: 16px; }
+            .plan-table { min-width: 500px; }
+            .modal-content { padding: 24px; }
+        }
+        @media (max-width: 480px) {
+            .goal-header > div:last-child button { padding: 6px 10px; font-size: 0.8rem; }
+            .subgoal-item { flex-direction: column; align-items: flex-start; }
+            .subgoal-item > div:last-child { align-self: flex-end; }
+        }
+    </style>
+</head>
+<body>
+    <div class="version-tag">v49.0.0 最终完美版（归档复选框优化）</div>
+
+    <div class="container">
+        <div class="app-header">
+            <h1><i class="fas fa-feather-alt" style="margin-right:10px;"></i>时光规划</h1>
+            <div class="header-actions">
+                <button onclick="openSettingsModal()"><i class="fas fa-sliders-h"></i> 设置</button>
+                <button onclick="exportPlanCode()"><i class="fas fa-download"></i> 导出</button>
+                <button onclick="showImportModal()"><i class="fas fa-upload"></i> 导入</button>
+            </div>
+        </div>
+
+        <div id="reminder-banner" class="reminder-banner hidden">
+            <span id="reminder-message"></span>
+            <button class="close-btn" onclick="hideReminderBanner()" style="background:none; border:none; color:white;"><i class="fas fa-times"></i></button>
+        </div>
+
+        <div class="app-wrapper">
+            <div class="sidebar">
+                <div class="sidebar-item active" data-view="main" onclick="switchView('main')">
+                    <i class="fas fa-calendar-alt"></i> <span>计划</span>
+                </div>
+                <div class="sidebar-item" data-view="archive" onclick="switchView('archive')">
+                    <i class="fas fa-archive"></i> <span>归档</span>
+                </div>
+            </div>
+
+            <div class="main-content">
+                <!-- ========== 计划视图 ========== -->
+                <div id="main-view" class="main-view active">
+                    <div class="content-grid">
+                        <!-- 左侧：目标管理 -->
+                        <div class="left-panel">
+                            <div class="card">
+                                <div class="card-header">
+                                    <i class="fas fa-bullseye"></i>
+                                    <h2>目标管理</h2>
+                                </div>
+                                <div class="instructions" style="background:var(--primary-100); border-radius:20px; padding:12px; margin-bottom:20px;">
+                                    <p><i class="fas fa-info-circle"></i> 添加大目标和子目标，设置优先级、时间、截止日期。</p>
+                                </div>
+
+                                <h3 style="margin-bottom:10px;">添加大目标</h3>
+                                <div class="form-group">
+                                    <input type="text" id="goal-name" placeholder="目标名称，例如：准备数学期末考试">
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <select id="goal-priority">
+                                            <option value="high">🔥 高优先级</option>
+                                            <option value="medium" selected>⚡ 中优先级</option>
+                                            <option value="low">🍃 低优先级</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <input type="number" id="goal-estimate" min="0.1" step="0.1" value="5" placeholder="小时">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <input type="date" id="goal-deadline">
+                                </div>
+                                <div class="form-group">
+                                    <select id="goal-template">
+                                        <option value="none">📁 无模板</option>
+                                        <option value="exam">📚 考试复习模板</option>
+                                        <option value="project">🛠️ 项目化学习模板</option>
+                                    </select>
+                                </div>
+                                <button id="add-goal" class="btn-success" style="width:100%"><i class="fas fa-plus"></i> 添加大目标</button>
+
+                                <div class="goal-list" id="goal-list"></div>
+                            </div>
+
+                            <div class="card" style="margin-top:20px;">
+                                <div class="card-header">
+                                    <i class="fas fa-clock"></i>
+                                    <h2>计划设置</h2>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>开始日期</label>
+                                        <input type="date" id="start-date">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>结束日期</label>
+                                        <input type="date" id="end-date">
+                                    </div>
+                                </div>
+                                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                                    <button id="generate-plan" class="btn-success" style="flex:1 1 200px;"><i class="fas fa-magic"></i> 生成计划</button>
+                                    <button id="reset-all" class="btn-danger" style="flex:1 1 200px;"><i class="fas fa-undo-alt"></i> 重置</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 右侧：计划表和统计 -->
+                        <div class="right-panel">
+                            <div class="card">
+                                <div class="card-header">
+                                    <i class="fas fa-table"></i>
+                                    <h2>时间规划表</h2>
+                                </div>
+                                <div id="progress-stats" class="progress-stats hidden" style="background:var(--primary-100); border-radius:20px; padding:12px; margin-bottom:16px;">
+                                    进度: <span id="completed-tasks">0</span>/<span id="total-plan-tasks">0</span> 任务完成
+                                </div>
+                                <div id="plan-result" class="hidden">
+                                    <div class="plan-table-container">
+                                        <table class="plan-table" id="plan-table"></table>
+                                    </div>
+                                    <div style="display:flex; gap:10px; margin-top:20px; flex-wrap:wrap;">
+                                        <button id="export-excel" class="btn-success"><i class="fas fa-file-excel"></i> 导出Excel</button>
+                                        <button id="print-plan" class="btn-warning"><i class="fas fa-print"></i> 打印</button>
+                                    </div>
+                                </div>
+                                <div id="no-plan" class="instructions" style="background:var(--gray-100); border-radius:20px; padding:24px; text-align:center;">
+                                    <i class="fas fa-calendar-times" style="font-size:2rem; color:var(--text-secondary);"></i>
+                                    <p>还没有生成计划。请先在左侧添加目标并设置日期范围，然后点击“生成计划”。</p>
+                                </div>
+                            </div>
+
+                            <div class="card" style="margin-top:20px;">
+                                <div class="card-header">
+                                    <i class="fas fa-chart-pie"></i>
+                                    <h2>统计信息</h2>
+                                </div>
+                                <div id="stats-container">
+                                    <p id="stats-message" class="text-secondary">生成计划后将显示统计信息</p>
+                                    <div id="stats-content" class="hidden">
+                                        <div class="form-row">
+                                            <div class="form-group"><p><i class="fas fa-tasks"></i> 总任务数: <span id="total-tasks">0</span></p></div>
+                                            <div class="form-group"><p><i class="fas fa-hourglass-half"></i> 总学习时间: <span id="total-hours">0</span> 小时</p></div>
+                                        </div>
+                                        <div class="form-row">
+                                            <div class="form-group"><p><i class="fas fa-exclamation-triangle" style="color:var(--danger-500);"></i> 高优先级: <span id="high-priority">0</span></p></div>
+                                            <div class="form-group"><p><i class="fas fa-calendar-week"></i> 平均每日: <span id="avg-daily">0</span> 小时</p></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card" style="margin-top:20px;">
+                                <div class="card-header">
+                                    <i class="fas fa-copy"></i>
+                                    <h2>预设模板</h2>
+                                </div>
+                                <div class="template-option" onclick="selectTemplate('exam')" style="background:var(--primary-50); border-radius:20px; padding:12px; margin-bottom:10px; cursor:pointer;">
+                                    <h4><i class="fas fa-book-open"></i> 考试复习模板</h4>
+                                    <p class="text-sm">内容复习 → 习题练习 → 模拟测试 → 重点回顾</p>
+                                </div>
+                                <div class="template-option" onclick="selectTemplate('project')" style="background:var(--primary-50); border-radius:20px; padding:12px; cursor:pointer;">
+                                    <h4><i class="fas fa-project-diagram"></i> 项目化学习模板</h4>
+                                    <p class="text-sm">调研 → 初步规划 → 详细计划 → 成果准备</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ========== 归档视图（带批量模式） ========== -->
+                <div id="archive-view" class="archive-view">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="fas fa-archive"></i>
+                            <h2>历史计划归档</h2>
+                        </div>
+                        <!-- 归档工具栏（动态切换） -->
+                        <div class="archive-toolbar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                            <div>
+                                <button id="toggle-batch-mode" class="btn-info"><i class="fas fa-check-double"></i> 选择</button>
+                            </div>
+                            <div id="batch-actions" class="hidden" style="display: flex; gap: 8px;">
+                                <label><input type="checkbox" id="select-all-archives"> 全选</label>
+                                <button id="delete-selected-archives" class="btn-danger"><i class="fas fa-trash-alt"></i> 批量删除</button>
+                                <button id="clear-all-archives" class="btn-danger"><i class="fas fa-trash"></i> 清空所有</button>
+                            </div>
+                        </div>
+                        <div id="archive-list" class="archive-list">
+                            <p class="text-secondary">暂无归档记录。每次成功生成计划时会自动保存。</p>
+                        </div>
+                    </div>
+                    <div id="archive-detail" class="card hidden" style="margin-top:20px;">
+                        <h3>计划详情</h3>
+                        <div id="archive-plan-table-container" class="plan-table-container"></div>
+                        <div style="display:flex; gap:10px; margin-top:20px; flex-wrap:wrap;">
+                            <button id="restore-archive-btn" class="btn-success"><i class="fas fa-history"></i> 恢复到当前计划</button>
+                            <button id="close-archive-detail-btn" class="btn-danger"><i class="fas fa-times"></i> 关闭</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== 所有弹窗 ========== -->
+    <!-- 设置弹窗 -->
+    <div id="settings-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-sliders-h"></i> 计划生成设置</h3>
+                <button class="modal-close" onclick="closeSettingsModal()">&times;</button>
+            </div>
+            <div class="form-group">
+                <label>每日最大学习时间 (小时)</label>
+                <input type="number" id="settings-daily-hours" min="1" max="24" step="0.5" value="6">
+            </div>
+            <div class="form-group">
+                <label style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                    <span class="switch">
+                        <input type="checkbox" id="settings-task-rollover" checked>
+                        <span class="slider"></span>
+                    </span>
+                    <span>开启任务顺延</span>
+                </label>
+            </div>
+            <div class="form-group">
+                <label>最大计划天数</label>
+                <input type="number" id="settings-max-days" min="1" max="365" value="30">
+            </div>
+            <div class="form-group">
+                <label>任务分布密度</label>
+                <select id="settings-density">
+                    <option value="sparse">🍃 离散（更分散）</option>
+                    <option value="normal" selected>⚖️ 一般</option>
+                    <option value="dense">🔥 密集（更集中）</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                    <span class="switch">
+                        <input type="checkbox" id="settings-filter-today" checked>
+                        <span class="slider"></span>
+                    </span>
+                    <span>只规划今天及以后的任务</span>
+                </label>
+            </div>
+            <hr>
+            <h3>⏰ 提醒设置</h3>
+            <div class="form-group">
+                <label>截止日期提前提醒</label>
+                <select id="settings-advance-reminder">
+                    <option value="0">不提醒</option>
+                    <option value="1">提前1天</option>
+                    <option value="2">提前2天</option>
+                    <option value="3">提前3天</option>
+                    <option value="7">提前7天</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                    <span class="switch">
+                        <input type="checkbox" id="settings-daily-reminder-enable">
+                        <span class="slider"></span>
+                    </span>
+                    <span>每日定时提醒</span>
+                </label>
+                <input type="time" id="settings-daily-reminder-time" value="20:00" style="margin-top:8px;">
+            </div>
+            <hr>
+            <h3>🎨 颜色设置</h3>
+            <div class="form-group">
+                <label>主题模式</label>
+                <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                    <button class="theme-btn" data-theme="light" onclick="setTheme('light')" style="flex:1 1 100px;">☀️ 浅色</button>
+                    <button class="theme-btn" data-theme="dark" onclick="setTheme('dark')" style="flex:1 1 100px;">🌙 深色</button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>主色调</label>
+                <div class="color-options">
+                    <div class="color-btn" style="background:#3b82f6;" data-primary="blue" onclick="setPrimary('blue')"></div>
+                    <div class="color-btn" style="background:#10b981;" data-primary="green" onclick="setPrimary('green')"></div>
+                    <div class="color-btn" style="background:#8b5cf6;" data-primary="purple" onclick="setPrimary('purple')"></div>
+                    <div class="color-btn" style="background:#f97316;" data-primary="orange" onclick="setPrimary('orange')"></div>
+                </div>
+            </div>
+            <hr>
+            <h3>✨ 动画设置</h3>
+            <div class="form-group">
+                <select id="settings-animation">
+                    <option value="off">🚫 关闭</option>
+                    <option value="subtle" selected>🌸 柔和</option>
+                    <option value="bouncy">🤸 活泼</option>
+                </select>
+            </div>
+            <div class="modal-footer" style="display:flex; gap:12px; margin-top:24px; flex-wrap:wrap;">
+                <button onclick="saveSettings()" class="btn-success" style="flex:1 1 200px;">保存设置</button>
+                <button onclick="closeSettingsModal()" class="btn-danger" style="flex:1 1 200px;">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 导入弹窗 -->
+    <div id="import-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header"><h3>📥 导入计划代码</h3><button class="modal-close" onclick="closeImportModal()">&times;</button></div>
+            <textarea id="import-code" rows="5" placeholder="粘贴计划代码..." style="width:100%; padding:12px;"></textarea>
+            <div style="display:flex; gap:12px; margin-top:20px;">
+                <button onclick="importPlanCode()" class="btn-success" style="flex:1;">导入</button>
+                <button onclick="closeImportModal()" class="btn-danger" style="flex:1;">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 导出弹窗 -->
+    <div id="export-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header"><h3>📤 导出计划代码</h3><button class="modal-close" onclick="closeExportModal()">&times;</button></div>
+            <textarea id="export-code" rows="5" readonly style="width:100%; padding:12px; background:var(--gray-100);"></textarea>
+            <div style="display:flex; gap:12px; margin-top:20px;">
+                <button onclick="copyExportCode()" class="btn-success" style="flex:1;">复制</button>
+                <button onclick="closeExportModal()" class="btn-danger" style="flex:1;">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加子目标弹窗 -->
+    <div id="add-subgoal-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header"><h3>➕ 添加子目标</h3><button class="modal-close" onclick="closeAddSubgoalModal()">&times;</button></div>
+            <input type="text" id="modal-add-subgoal-name" placeholder="子目标名称" style="width:100%; padding:12px;">
+            <div class="form-row" style="margin-top:12px;">
+                <select id="modal-add-subgoal-priority" style="flex:1;">
+                    <option value="high">🔥 高优先级</option>
+                    <option value="medium" selected>⚡ 中优先级</option>
+                    <option value="low">🍃 低优先级</option>
+                </select>
+                <input type="number" id="modal-add-subgoal-estimate" min="0.1" step="0.1" value="2" placeholder="小时" style="flex:1;">
+            </div>
+            <input type="date" id="modal-add-subgoal-deadline" style="width:100%; margin-top:12px; padding:12px;">
+            <div id="add-subgoal-time-warning" class="error-message hidden" style="margin-top:10px;">子目标总时间不能超过大目标剩余时间</div>
+            <div style="display:flex; gap:12px; margin-top:20px;">
+                <button id="modal-add-subgoal" class="btn-success" style="flex:1;">添加</button>
+                <button onclick="closeAddSubgoalModal()" class="btn-danger" style="flex:1;">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 编辑大目标弹窗 -->
+    <div id="goal-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header"><h3>✏️ 编辑大目标</h3><button class="modal-close" onclick="closeGoalModal()">&times;</button></div>
+            <input type="text" id="modal-goal-name" placeholder="目标名称" style="width:100%; padding:12px;">
+            <div class="form-row" style="margin-top:12px;">
+                <select id="modal-goal-priority" style="flex:1;">
+                    <option value="high">🔥 高优先级</option>
+                    <option value="medium">⚡ 中优先级</option>
+                    <option value="low">🍃 低优先级</option>
+                </select>
+                <input type="number" id="modal-goal-estimate" min="0.1" step="0.1" placeholder="小时" style="flex:1;">
+            </div>
+            <input type="date" id="modal-goal-deadline" style="width:100%; margin-top:12px; padding:12px;">
+            <div style="display:flex; gap:12px; margin-top:20px;">
+                <button id="modal-update-goal" class="btn-success" style="flex:1;">更新</button>
+                <button onclick="closeGoalModal()" class="btn-danger" style="flex:1;">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 编辑子目标弹窗 -->
+    <div id="subgoal-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header"><h3>✏️ 编辑子目标</h3><button class="modal-close" onclick="closeSubgoalModal()">&times;</button></div>
+            <input type="text" id="modal-subgoal-name" placeholder="子目标名称" style="width:100%; padding:12px;">
+            <div class="form-row" style="margin-top:12px;">
+                <select id="modal-subgoal-priority" style="flex:1;">
+                    <option value="high">🔥 高优先级</option>
+                    <option value="medium">⚡ 中优先级</option>
+                    <option value="low">🍃 低优先级</option>
+                </select>
+                <input type="number" id="modal-subgoal-estimate" min="0.1" step="0.1" placeholder="小时" style="flex:1;">
+            </div>
+            <input type="date" id="modal-subgoal-deadline" style="width:100%; margin-top:12px; padding:12px;">
+            <div style="display:flex; gap:12px; margin-top:20px;">
+                <button id="modal-update-subgoal" class="btn-success" style="flex:1;">更新</button>
+                <button onclick="closeSubgoalModal()" class="btn-danger" style="flex:1;">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 错误提示弹窗 -->
+    <div id="error-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header"><h3>❌ 计划生成失败</h3><button class="modal-close" onclick="closeErrorModal()">&times;</button></div>
+            <p id="error-message-text" style="white-space: pre-line;"></p>
+            <button onclick="closeErrorModal()" class="btn-danger" style="width:100%; margin-top:20px;">关闭</button>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            // ---------- 数据 ----------
+            let goals = [];
+            let currentGoalId = null;
+            let editingGoalId = null;
+            let editingSubgoalId = null;
+            let completedTasks = {};
+
+            // 归档数据
+            let archives = [];
+
+            // 未保存更改标记
+            let dirtyFlag = false;
+
+            // 批量模式标志
+            let batchMode = false;
+
+            // 默认设置
+            const DEFAULT_SETTINGS = {
+                dailyHours: 6,
+                taskRollover: true,
+                maxDays: 30,
+                filterToday: true,
+                density: 'normal',
+                advanceReminder: 0,
+                dailyReminderEnable: false,
+                dailyReminderTime: "20:00",
+                theme: 'light',
+                primary: 'blue',
+                animation: 'subtle'
+            };
+            let settings = { ...DEFAULT_SETTINGS };
+            let lastReminderDate = '';
+
+            // 加载设置和归档
+            function loadSettingsAndArchives() {
+                const savedSettings = localStorage.getItem('planSettings');
+                if (savedSettings) {
+                    try {
+                        const loaded = JSON.parse(savedSettings);
+                        settings = { ...DEFAULT_SETTINGS, ...loaded };
+                        if (!['sparse', 'normal', 'dense'].includes(settings.density)) settings.density = DEFAULT_SETTINGS.density;
+                        if (!['light', 'dark'].includes(settings.theme)) settings.theme = DEFAULT_SETTINGS.theme;
+                        if (!['blue', 'green', 'purple', 'orange'].includes(settings.primary)) settings.primary = DEFAULT_SETTINGS.primary;
+                        if (!['off', 'subtle', 'bouncy'].includes(settings.animation)) settings.animation = DEFAULT_SETTINGS.animation;
+                    } catch (e) {
+                        settings = { ...DEFAULT_SETTINGS };
+                    }
+                }
+                const savedArchives = localStorage.getItem('planArchives');
+                if (savedArchives) {
+                    try {
+                        archives = JSON.parse(savedArchives);
+                        if (!Array.isArray(archives)) archives = [];
+                    } catch (e) {
+                        archives = [];
+                    }
+                }
+            }
+            loadSettingsAndArchives();
+
+            function saveSettings() {
+                localStorage.setItem('planSettings', JSON.stringify(settings));
+            }
+            function saveArchives() {
+                localStorage.setItem('planArchives', JSON.stringify(archives));
+            }
+
+            // 应用主题、主色和动画
+            function applyThemeAndAnimation() {
+                document.documentElement.setAttribute('data-theme', settings.theme);
+                document.documentElement.setAttribute('data-primary', settings.primary);
+                document.body.classList.remove('animation-off', 'animation-subtle', 'animation-bouncy');
+                document.body.classList.add(`animation-${settings.animation}`);
+
+                document.querySelectorAll('.theme-btn').forEach(btn => {
+                    const theme = btn.getAttribute('data-theme');
+                    if (theme === settings.theme) btn.classList.add('active');
+                    else btn.classList.remove('active');
+                });
+                document.querySelectorAll('.color-btn').forEach(btn => {
+                    const primary = btn.getAttribute('data-primary');
+                    if (primary === settings.primary) btn.classList.add('selected');
+                    else btn.classList.remove('selected');
+                });
+            }
+
+            window.setTheme = function(theme) {
+                settings.theme = theme;
+                applyThemeAndAnimation();
+                saveSettings();
+            };
+            window.setPrimary = function(primary) {
+                settings.primary = primary;
+                applyThemeAndAnimation();
+                saveSettings();
+            };
+
+            // 视图切换
+            window.switchView = function(view) {
+                document.querySelectorAll('.sidebar-item').forEach(item => item.classList.remove('active'));
+                document.querySelector(`.sidebar-item[data-view="${view}"]`).classList.add('active');
+                if (view === 'main') {
+                    document.getElementById('main-view').classList.add('active');
+                    document.getElementById('archive-view').classList.remove('active');
+                } else {
+                    document.getElementById('main-view').classList.remove('active');
+                    document.getElementById('archive-view').classList.add('active');
+                    // 退出批量模式
+                    if (batchMode) toggleBatchMode();
+                    renderArchives();
+                }
+            };
+
+            // 切换批量模式
+            function toggleBatchMode() {
+                batchMode = !batchMode;
+                const toggleBtn = document.getElementById('toggle-batch-mode');
+                const batchActions = document.getElementById('batch-actions');
+                if (batchMode) {
+                    toggleBtn.innerHTML = '<i class="fas fa-times"></i> 取消';
+                    batchActions.classList.remove('hidden');
+                } else {
+                    toggleBtn.innerHTML = '<i class="fas fa-check-double"></i> 选择';
+                    batchActions.classList.add('hidden');
+                    // 取消全选
+                    const selectAll = document.getElementById('select-all-archives');
+                    if (selectAll) selectAll.checked = false;
+                }
+                renderArchives();
+            }
+
+            // 归档渲染（带复选框，根据 batchMode 显示）
+            function renderArchives() {
+                const container = document.getElementById('archive-list');
+                if (!archives.length) {
+                    container.innerHTML = '<p class="text-secondary">暂无归档记录。每次成功生成计划时会自动保存。</p>';
+                    return;
+                }
+                archives.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+                let html = '';
+                archives.forEach(arch => {
+                    const date = new Date(arch.timestamp).toLocaleString();
+                    const checkboxHtml = batchMode ? `<input type="checkbox" class="archive-checkbox" value="${arch.id}" style="margin-right: 10px;">` : '';
+                    html += `
+                        <div class="archive-item" data-id="${arch.id}">
+                            ${checkboxHtml}
+                            <div class="archive-item-content">
+                                <strong>${arch.dateRange || '未知日期范围'}</strong><br>
+                                <small>保存于 ${date} | 任务数: ${arch.taskCount || 0}</small>
+                            </div>
+                            <div class="archive-item-actions">
+                                <button class="btn-info" onclick="viewArchive('${arch.id}')"><i class="fas fa-eye"></i> 查看</button>
+                                <button class="btn-danger" onclick="deleteArchive('${arch.id}')"><i class="fas fa-trash"></i> 删除</button>
+                            </div>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            }
+
+            window.viewArchive = function(id) {
+                const arch = archives.find(a => a.id == id);
+                if (!arch) return;
+                const container = document.getElementById('archive-plan-table-container');
+                container.innerHTML = arch.scheduleHTML || '<p>无法显示计划详情</p>';
+                document.getElementById('archive-detail').classList.remove('hidden');
+                window.currentViewArchiveId = id;
+            };
+
+            window.closeArchiveDetail = function() {
+                document.getElementById('archive-detail').classList.add('hidden');
+            };
+
+            window.deleteArchive = function(id) {
+                if (confirm('确定删除该归档记录？')) {
+                    archives = archives.filter(a => a.id != id);
+                    saveArchives();
+                    renderArchives();
+                    closeArchiveDetail();
+                }
+            };
+
+            window.restoreArchive = function() {
+                const id = window.currentViewArchiveId;
+                if (!id) return;
+                const arch = archives.find(a => a.id == id);
+                if (!arch) return;
+                goals = arch.goals ? JSON.parse(JSON.stringify(arch.goals)) : [];
+                settings = { ...DEFAULT_SETTINGS, ...arch.settings };
+                applyThemeAndAnimation();
+                renderGoals();
+                switchView('main');
+                if (arch.startDate && arch.endDate) {
+                    startDateInput.value = arch.startDate;
+                    endDateInput.value = arch.endDate;
+                    generatePlanButton.click();
+                } else {
+                    alert('归档数据不完整，已恢复目标和设置，请手动生成计划。');
+                }
+                saveSettings();
+                dirtyFlag = true;
+                closeArchiveDetail();
+            };
+
+            // 保存当前计划到归档
+            function saveCurrentPlanToArchive() {
+                if (!planTable.rows || planTable.rows.length <= 1) return;
+                const start = startDateInput.value;
+                const end = endDateInput.value;
+                const scheduleHTML = planTable.outerHTML;
+                const taskCount = document.querySelectorAll('#plan-table .task-checkbox').length;
+                const archiveItem = {
+                    id: Date.now(),
+                    timestamp: new Date().toISOString(),
+                    startDate: start,
+                    endDate: end,
+                    dateRange: `${start} 至 ${end}`,
+                    goals: JSON.parse(JSON.stringify(goals)),
+                    settings: { ...settings },
+                    scheduleHTML: scheduleHTML,
+                    taskCount: taskCount
+                };
+                archives.push(archiveItem);
+                if (archives.length > 50) archives.shift();
+                saveArchives();
+            }
+
+            // ---------- DOM 元素绑定 ----------
+            const goalNameInput = document.getElementById('goal-name');
+            const goalPrioritySelect = document.getElementById('goal-priority');
+            const goalEstimateInput = document.getElementById('goal-estimate');
+            const goalDeadlineInput = document.getElementById('goal-deadline');
+            const goalTemplateSelect = document.getElementById('goal-template');
+            const addGoalButton = document.getElementById('add-goal');
+            const goalList = document.getElementById('goal-list');
+            const startDateInput = document.getElementById('start-date');
+            const endDateInput = document.getElementById('end-date');
+            const generatePlanButton = document.getElementById('generate-plan');
+            const resetAllButton = document.getElementById('reset-all');
+            const planResult = document.getElementById('plan-result');
+            const noPlan = document.getElementById('no-plan');
+            const planTable = document.getElementById('plan-table');
+            const exportExcelButton = document.getElementById('export-excel');
+            const printPlanButton = document.getElementById('print-plan');
+            const statsContent = document.getElementById('stats-content');
+            const statsMessage = document.getElementById('stats-message');
+            const totalTasksSpan = document.getElementById('total-tasks');
+            const totalHoursSpan = document.getElementById('total-hours');
+            const highPrioritySpan = document.getElementById('high-priority');
+            const avgDailySpan = document.getElementById('avg-daily');
+            const progressStats = document.getElementById('progress-stats');
+            const completedSpan = document.getElementById('completed-tasks');
+            const totalPlanTasksSpan = document.getElementById('total-plan-tasks');
+            const reminderBanner = document.getElementById('reminder-banner');
+            const reminderMessage = document.getElementById('reminder-message');
+            const settingsModal = document.getElementById('settings-modal');
+            const addSubgoalModal = document.getElementById('add-subgoal-modal');
+            const goalModal = document.getElementById('goal-modal');
+            const subgoalModal = document.getElementById('subgoal-modal');
+            const importModal = document.getElementById('import-modal');
+            const exportModal = document.getElementById('export-modal');
+            const errorModal = document.getElementById('error-modal');
+            const errorMessageText = document.getElementById('error-message-text');
+            const settingsDailyHours = document.getElementById('settings-daily-hours');
+            const settingsTaskRollover = document.getElementById('settings-task-rollover');
+            const settingsMaxDays = document.getElementById('settings-max-days');
+            const settingsDensity = document.getElementById('settings-density');
+            const settingsFilterToday = document.getElementById('settings-filter-today');
+            const settingsAdvanceReminder = document.getElementById('settings-advance-reminder');
+            const settingsDailyReminderEnable = document.getElementById('settings-daily-reminder-enable');
+            const settingsDailyReminderTime = document.getElementById('settings-daily-reminder-time');
+            const settingsAnimation = document.getElementById('settings-animation');
+            const importCode = document.getElementById('import-code');
+            const exportCode = document.getElementById('export-code');
+            const modalAddSubgoalName = document.getElementById('modal-add-subgoal-name');
+            const modalAddSubgoalPriority = document.getElementById('modal-add-subgoal-priority');
+            const modalAddSubgoalEstimate = document.getElementById('modal-add-subgoal-estimate');
+            const modalAddSubgoalDeadline = document.getElementById('modal-add-subgoal-deadline');
+            const addSubgoalTimeWarning = document.getElementById('add-subgoal-time-warning');
+            const modalAddSubgoal = document.getElementById('modal-add-subgoal');
+            const modalGoalName = document.getElementById('modal-goal-name');
+            const modalGoalPriority = document.getElementById('modal-goal-priority');
+            const modalGoalEstimate = document.getElementById('modal-goal-estimate');
+            const modalGoalDeadline = document.getElementById('modal-goal-deadline');
+            const modalUpdateGoal = document.getElementById('modal-update-goal');
+            const modalSubgoalName = document.getElementById('modal-subgoal-name');
+            const modalSubgoalPriority = document.getElementById('modal-subgoal-priority');
+            const modalSubgoalEstimate = document.getElementById('modal-subgoal-estimate');
+            const modalSubgoalDeadline = document.getElementById('modal-subgoal-deadline');
+            const modalUpdateSubgoal = document.getElementById('modal-update-subgoal');
+
+            // 初始化日期
+            function initializeDates() {
+                const today = new Date();
+                const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
+                const nextWeek = new Date(today); nextWeek.setDate(nextWeek.getDate() + 7);
+                if (goalDeadlineInput) goalDeadlineInput.valueAsDate = tomorrow;
+                if (startDateInput) startDateInput.valueAsDate = today;
+                if (endDateInput) endDateInput.valueAsDate = nextWeek;
+            }
+            initializeDates();
+
+            // 辅助函数
+            function formatDate(d) {
+                const date = new Date(d);
+                return `${date.getFullYear()}-${(date.getMonth()+1).toString().padStart(2,'0')}-${date.getDate().toString().padStart(2,'0')}`;
+            }
+            function formatTime(h) {
+                if (h < 1) return `${Math.round(h * 60)}分钟`;
+                const hours = Math.floor(h);
+                const mins = Math.round((h - hours) * 60);
+                return mins === 0 ? `${hours}小时` : `${hours}小时${mins}分钟`;
+            }
+            function getPriorityText(p) {
+                return { high:'高优先级', medium:'中优先级', low:'低优先级' }[p] || '';
+            }
+            function isTaskExpired(deadline) {
+                const today = new Date();
+                const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+                return deadline < todayStr;
+            }
+            function getTodayString() {
+                const d = new Date();
+                return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+            }
+
+            // 提醒
+            function showReminder(msg) {
+                reminderMessage.textContent = msg;
+                reminderBanner.classList.remove('hidden');
+                setTimeout(() => reminderBanner.classList.add('hidden'), 8000);
+            }
+            window.hideReminderBanner = () => reminderBanner.classList.add('hidden');
+
+            function checkDailyReminder() {
+                if (!settings.dailyReminderEnable) return false;
+                const now = new Date(), today = getTodayString();
+                if (lastReminderDate === today) return false;
+                const [hour, minute] = settings.dailyReminderTime.split(':').map(Number);
+                const reminderTime = new Date(now); reminderTime.setHours(hour, minute, 0, 0);
+                if (now < reminderTime) return false;
+                if (!planTable.rows || planTable.rows.length <= 1) return false;
+                const rows = planTable.querySelectorAll('tr');
+                let taskCount = 0;
+                for (let i = 1; i < rows.length; i++) {
+                    if (rows[i].cells[0]?.textContent === today) {
+                        taskCount = rows[i].cells[1]?.querySelectorAll('li').length || 0;
+                        break;
+                    }
+                }
+                if (taskCount > 0) {
+                    showReminder(`⏰ 今天有 ${taskCount} 个任务需要完成，加油！`);
+                    lastReminderDate = today;
+                    return true;
+                }
+                return false;
+            }
+
+            function checkDeadlineReminders() {
+                if (!settings.advanceReminder) return false;
+                const today = getTodayString();
+                const tasks = [];
+                goals.forEach(g => {
+                    if (g.subgoals.length) {
+                        g.subgoals.forEach(s => {
+                            if (completedTasks[`${g.id}-${s.id}`]) return;
+                            const days = Math.ceil((new Date(s.deadline) - new Date(today)) / 86400000);
+                            if (days === settings.advanceReminder) tasks.push(`${g.name} - ${s.name} (截止 ${s.deadline})`);
+                        });
+                    } else {
+                        if (completedTasks[`${g.id}`]) return;
+                        const days = Math.ceil((new Date(g.deadline) - new Date(today)) / 86400000);
+                        if (days === settings.advanceReminder) tasks.push(`${g.name} (截止 ${g.deadline})`);
+                    }
+                });
+                if (tasks.length) {
+                    showReminder(`⏳ ${tasks.length} 个任务将在 ${settings.advanceReminder} 天后截止：\n${tasks.join('\n')}`);
+                    return true;
+                }
+                return false;
+            }
+            function checkAllReminders() { if (planTable.rows?.length > 1) { checkDailyReminder(); checkDeadlineReminders(); } }
+
+            function showErrorModal(msg) { errorMessageText.textContent = msg; errorModal.classList.remove('hidden'); }
+            window.closeErrorModal = () => errorModal.classList.add('hidden');
+
+            // 弹窗控制
+            window.openSettingsModal = function() {
+                settingsDailyHours.value = settings.dailyHours;
+                settingsTaskRollover.checked = settings.taskRollover;
+                settingsMaxDays.value = settings.maxDays;
+                settingsDensity.value = settings.density;
+                settingsFilterToday.checked = settings.filterToday;
+                settingsAdvanceReminder.value = settings.advanceReminder;
+                settingsDailyReminderEnable.checked = settings.dailyReminderEnable;
+                settingsDailyReminderTime.value = settings.dailyReminderTime;
+                settingsAnimation.value = settings.animation;
+                applyThemeAndAnimation();
+                settingsModal.classList.remove('hidden');
+            };
+            window.closeSettingsModal = () => settingsModal.classList.add('hidden');
+            window.saveSettings = function() {
+                settings.dailyHours = parseFloat(settingsDailyHours.value) || DEFAULT_SETTINGS.dailyHours;
+                settings.taskRollover = settingsTaskRollover.checked;
+                settings.maxDays = parseInt(settingsMaxDays.value) || DEFAULT_SETTINGS.maxDays;
+                settings.density = settingsDensity.value;
+                settings.filterToday = settingsFilterToday.checked;
+                settings.advanceReminder = parseInt(settingsAdvanceReminder.value) || 0;
+                settings.dailyReminderEnable = settingsDailyReminderEnable.checked;
+                settings.dailyReminderTime = settingsDailyReminderTime.value;
+                settings.animation = settingsAnimation.value;
+                if (settings.dailyHours < 1) settings.dailyHours = DEFAULT_SETTINGS.dailyHours;
+                if (settings.dailyHours > 24) settings.dailyHours = DEFAULT_SETTINGS.dailyHours;
+                if (settings.maxDays < 1) settings.maxDays = DEFAULT_SETTINGS.maxDays;
+                if (settings.maxDays > 365) settings.maxDays = DEFAULT_SETTINGS.maxDays;
+                if (!['sparse', 'normal', 'dense'].includes(settings.density)) settings.density = DEFAULT_SETTINGS.density;
+                if (!['off', 'subtle', 'bouncy'].includes(settings.animation)) settings.animation = DEFAULT_SETTINGS.animation;
+                applyThemeAndAnimation();
+                saveSettings();
+                closeSettingsModal();
+                alert('设置已保存！');
+                checkAllReminders();
+            };
+
+            window.openAddSubgoalModal = function(goalId) {
+                currentGoalId = goalId;
+                const goal = goals.find(g => g.id === goalId);
+                if (!goal) return;
+                modalAddSubgoalName.value = '';
+                modalAddSubgoalPriority.value = 'medium';
+                modalAddSubgoalEstimate.value = '2';
+                const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
+                modalAddSubgoalDeadline.valueAsDate = tomorrow;
+                addSubgoalTimeWarning.classList.add('hidden');
+                addSubgoalModal.classList.remove('hidden');
+            };
+            window.closeAddSubgoalModal = function() {
+                addSubgoalModal.classList.add('hidden');
+                currentGoalId = null;
+                addSubgoalTimeWarning.classList.add('hidden');
+            };
+
+            window.openGoalModal = function(goalId) {
+                const goal = goals.find(g => g.id === goalId);
+                if (!goal) return;
+                editingGoalId = goalId;
+                modalGoalName.value = goal.name;
+                modalGoalPriority.value = goal.priority;
+                modalGoalEstimate.value = goal.estimate;
+                modalGoalDeadline.value = goal.deadline;
+                goalModal.classList.remove('hidden');
+            };
+            window.closeGoalModal = function() {
+                goalModal.classList.add('hidden');
+                editingGoalId = null;
+            };
+
+            window.openSubgoalModal = function(goalId, subgoalId) {
+                const goal = goals.find(g => g.id === goalId);
+                if (!goal) return;
+                const sub = goal.subgoals.find(s => s.id === subgoalId);
+                if (!sub) return;
+                currentGoalId = goalId; editingSubgoalId = subgoalId;
+                modalSubgoalName.value = sub.name;
+                modalSubgoalPriority.value = sub.priority;
+                modalSubgoalEstimate.value = sub.estimate;
+                modalSubgoalDeadline.value = sub.deadline;
+                subgoalModal.classList.remove('hidden');
+            };
+            window.closeSubgoalModal = function() {
+                subgoalModal.classList.add('hidden');
+                currentGoalId = null; editingSubgoalId = null;
+            };
+
+            window.showImportModal = function() { importCode.value = ''; importModal.classList.remove('hidden'); };
+            window.closeImportModal = function() { importModal.classList.add('hidden'); };
+            window.closeExportModal = function() { exportModal.classList.add('hidden'); };
+            window.copyExportCode = function() { exportCode.select(); document.execCommand('copy'); alert('代码已复制'); };
+
+            window.selectTemplate = function(t) { goalTemplateSelect.value = t; };
+
+            // 添加大目标
+            addGoalButton.addEventListener('click', function() {
+                const name = goalNameInput.value.trim();
+                const priority = goalPrioritySelect.value;
+                const estimate = parseFloat(goalEstimateInput.value);
+                const deadline = goalDeadlineInput.value;
+                const template = goalTemplateSelect.value;
+                if (!name) return alert('请输入目标名称');
+                if (isNaN(estimate) || estimate <= 0) return alert('请输入有效的预计时间');
+                if (!deadline) return alert('请选择截止日期');
+                const goal = { id: Date.now(), name, priority, estimate, deadline, subgoals: [] };
+                if (template !== 'none') {
+                    const subgoals = generateSubgoalsByTemplate(name, template, estimate, deadline);
+                    goal.subgoals = subgoals;
+                }
+                goals.push(goal);
+                renderGoals();
+                resetGoalForm();
+                dirtyFlag = true;
+            });
+
+            function generateSubgoalsByTemplate(_, template, total, deadline) {
+                const parts = template === 'exam' 
+                    ? [{ name:'内容复习', ratio:0.4 }, { name:'习题练习', ratio:0.3 }, { name:'模拟测试', ratio:0.2 }, { name:'重点回顾', ratio:0.1 }]
+                    : [{ name:'调研', ratio:0.2 }, { name:'初步项目拟定', ratio:0.25 }, { name:'项目计划最终', ratio:0.3 }, { name:'项目成品展示准备', ratio:0.25 }];
+                let est = parts.map(p => Math.round(p.ratio * total * 100) / 100);
+                const sum = est.reduce((a,b)=>a+b,0);
+                const diff = total - sum;
+                if (Math.abs(diff) > 0.001) est[est.length-1] = +(est[est.length-1] + diff).toFixed(2);
+                let needAdjust = false;
+                est = est.map(v => { if (v < 0.1 && v > 0) { needAdjust = true; return 0.1; } return v; });
+                if (needAdjust) {
+                    const newSum = est.reduce((a,b)=>a+b,0);
+                    if (newSum > total + 0.01) {
+                        const factor = total / newSum;
+                        est = est.map(v => Math.round(v * factor * 100) / 100);
+                        const finalSum = est.reduce((a,b)=>a+b,0);
+                        const finalDiff = total - finalSum;
+                        if (Math.abs(finalDiff) > 0.001) est[est.length-1] = +(est[est.length-1] + finalDiff).toFixed(2);
+                    } else if (newSum < total - 0.01) {
+                        est[est.length-1] = +(est[est.length-1] + (total - newSum)).toFixed(2);
+                    }
+                }
+                const subgoals = [];
+                const base = new Date(deadline);
+                for (let i = parts.length-1; i >= 0; i--) {
+                    const d = new Date(base);
+                    d.setDate(d.getDate() - (template==='exam' ? (parts.length-1-i) : (parts.length-1-i)*2));
+                    subgoals.push({
+                        id: Date.now() + i,
+                        name: parts[i].name,
+                        priority: 'medium',
+                        estimate: est[i],
+                        deadline: formatDate(d.toISOString().split('T')[0])
+                    });
+                }
+                return subgoals;
+            }
+
+            function resetGoalForm() {
+                goalNameInput.value = '';
+                goalPrioritySelect.value = 'medium';
+                goalEstimateInput.value = '5';
+                const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
+                goalDeadlineInput.valueAsDate = tomorrow;
+                goalTemplateSelect.value = 'none';
+            }
+
+            // 添加子目标
+            modalAddSubgoalEstimate.addEventListener('input', function() {
+                const goal = goals.find(g => g.id === currentGoalId);
+                if (!goal) return;
+                const est = parseFloat(modalAddSubgoalEstimate.value) || 0;
+                const total = goal.subgoals.reduce((s, sg) => s + sg.estimate, 0);
+                const remaining = goal.estimate - total;
+                if (est > remaining + 0.01) addSubgoalTimeWarning.classList.remove('hidden');
+                else addSubgoalTimeWarning.classList.add('hidden');
+            });
+            modalAddSubgoal.addEventListener('click', function() {
+                if (!currentGoalId) return;
+                const name = modalAddSubgoalName.value.trim();
+                const priority = modalAddSubgoalPriority.value;
+                const estimate = parseFloat(modalAddSubgoalEstimate.value);
+                const deadline = modalAddSubgoalDeadline.value;
+                if (!name) return alert('请输入子目标名称');
+                if (isNaN(estimate) || estimate <= 0) return alert('请输入有效的预计时间');
+                if (!deadline) return alert('请选择截止日期');
+                const goal = goals.find(g => g.id === currentGoalId);
+                if (!goal) return;
+                const total = goal.subgoals.reduce((s, sg) => s + sg.estimate, 0);
+                if (total + estimate > goal.estimate + 0.01) {
+                    alert(`子目标总时间（${formatTime(total + estimate)}）已超过大目标时间（${formatTime(goal.estimate)}）`);
+                    return;
+                }
+                goal.subgoals.push({ id: Date.now(), name, priority, estimate, deadline });
+                renderGoals();
+                closeAddSubgoalModal();
+                dirtyFlag = true;
+            });
+
+            // 更新大目标
+            modalUpdateGoal.addEventListener('click', function() {
+                if (!editingGoalId) return;
+                const name = modalGoalName.value.trim();
+                const priority = modalGoalPriority.value;
+                const estimate = parseFloat(modalGoalEstimate.value);
+                const deadline = modalGoalDeadline.value;
+                if (!name) return alert('请输入目标名称');
+                if (isNaN(estimate) || estimate <= 0) return alert('请输入有效的预计时间');
+                if (!deadline) return alert('请选择截止日期');
+                const idx = goals.findIndex(g => g.id === editingGoalId);
+                if (idx !== -1) {
+                    goals[idx].name = name; goals[idx].priority = priority; goals[idx].estimate = estimate; goals[idx].deadline = deadline;
+                    renderGoals(); closeGoalModal();
+                    dirtyFlag = true;
+                }
+            });
+
+            // 更新子目标
+            modalUpdateSubgoal.addEventListener('click', function() {
+                if (!editingSubgoalId || !currentGoalId) return;
+                const name = modalSubgoalName.value.trim();
+                const priority = modalSubgoalPriority.value;
+                const estimate = parseFloat(modalSubgoalEstimate.value);
+                const deadline = modalSubgoalDeadline.value;
+                if (!name) return alert('请输入子目标名称');
+                if (isNaN(estimate) || estimate <= 0) return alert('请输入有效的预计时间');
+                if (!deadline) return alert('请选择截止日期');
+                const goal = goals.find(g => g.id === currentGoalId);
+                if (!goal) return;
+                const subIdx = goal.subgoals.findIndex(s => s.id === editingSubgoalId);
+                if (subIdx === -1) return;
+                const other = goal.subgoals.reduce((sum, s, i) => i === subIdx ? sum : sum + s.estimate, 0);
+                if (other + estimate > goal.estimate + 0.01) {
+                    alert(`子目标总时间（${formatTime(other + estimate)}）已超过大目标时间（${formatTime(goal.estimate)}）`);
+                    return;
+                }
+                goal.subgoals[subIdx].name = name;
+                goal.subgoals[subIdx].priority = priority;
+                goal.subgoals[subIdx].estimate = estimate;
+                goal.subgoals[subIdx].deadline = deadline;
+                renderGoals(); closeSubgoalModal();
+                dirtyFlag = true;
+            });
+
+            // 删除
+            window.deleteGoal = function(id) {
+                if (confirm('确定删除该大目标及其子目标？')) {
+                    goals.find(g => g.id === id)?.subgoals.forEach(s => delete completedTasks[`${id}-${s.id}`]);
+                    delete completedTasks[`${id}`];
+                    goals = goals.filter(g => g.id !== id);
+                    renderGoals();
+                    if (planTable.rows.length > 0) generatePlanButton.click();
+                    dirtyFlag = true;
+                }
+            };
+            window.deleteSubgoal = function(gid, sid) {
+                if (confirm('确定删除该子目标？')) {
+                    const goal = goals.find(g => g.id === gid);
+                    if (goal) {
+                        delete completedTasks[`${gid}-${sid}`];
+                        goal.subgoals = goal.subgoals.filter(s => s.id !== sid);
+                        renderGoals();
+                        if (planTable.rows.length > 0) generatePlanButton.click();
+                        dirtyFlag = true;
+                    }
+                }
+            };
+
+            // 渲染目标
+            function renderGoals() {
+                goalList.innerHTML = '';
+                if (!goals.length) { goalList.innerHTML = '<p class="text-secondary">暂无目标，请添加大目标。</p>'; return; }
+                goals.forEach(g => {
+                    const totalSub = g.subgoals.reduce((s, sg) => s + sg.estimate, 0);
+                    const timeStatus = totalSub > g.estimate + 0.01
+                        ? `<span class="priority-high">(超时: ${formatTime(totalSub)}/${formatTime(g.estimate)})</span>`
+                        : `<span>(${formatTime(totalSub)}/${formatTime(g.estimate)})</span>`;
+                    const div = document.createElement('div'); div.className = 'goal-item';
+                    div.innerHTML = `
+                        <div class="goal-header">
+                            <div><strong>${g.name}</strong> <span class="priority-${g.priority}">(${getPriorityText(g.priority)})</span></div>
+                            <div>
+                                <button onclick="openAddSubgoalModal(${g.id})" class="btn-info" style="padding:6px 12px;"><i class="fas fa-plus"></i> 子目标</button>
+                                <button onclick="openGoalModal(${g.id})" class="btn-warning" style="padding:6px 12px;"><i class="fas fa-edit"></i></button>
+                                <button onclick="deleteGoal(${g.id})" class="btn-danger" style="padding:6px 12px;"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                        <div class="goal-meta">
+                            <span><i class="far fa-clock"></i> ${formatTime(g.estimate)} ${timeStatus}</span>
+                            <span><i class="far fa-calendar-alt"></i> 截止: ${formatDate(g.deadline)}</span>
+                        </div>
+                        <div class="subgoal-list">
+                            ${renderSubgoals(g)}
+                        </div>
+                    `;
+                    goalList.appendChild(div);
+                });
+            }
+            function renderSubgoals(goal) {
+                if (!goal.subgoals.length) return '<p class="text-secondary" style="margin-left:20px;">暂无子目标</p>';
+                return goal.subgoals.map(s => `
+                    <div class="subgoal-item">
+                        <div>
+                            <span>${s.name}</span>
+                            <span class="priority-${s.priority}">(${getPriorityText(s.priority)})</span>
+                        </div>
+                        <div>
+                            <span>${formatTime(s.estimate)} | ${formatDate(s.deadline)}</span>
+                            <button onclick="openSubgoalModal(${goal.id}, ${s.id})" class="btn-warning" style="padding:4px 8px; margin-left:8px;"><i class="fas fa-edit"></i></button>
+                            <button onclick="deleteSubgoal(${goal.id}, ${s.id})" class="btn-danger" style="padding:4px 8px;"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // 生成计划
+            generatePlanButton.addEventListener('click', function() {
+                const start = startDateInput.value, end = endDateInput.value;
+                if (!start || !end) return alert('请选择日期范围');
+                if (!goals.length) return alert('请至少添加一个目标');
+
+                adjustDateRange();
+
+                const result = generatePlanTable(startDateInput.value, endDateInput.value, settings.dailyHours);
+                if (result.success) {
+                    planResult.classList.remove('hidden');
+                    noPlan.classList.add('hidden');
+                    updateStats();
+                    updateProgressStats();
+                    checkAllReminders();
+                    saveCurrentPlanToArchive();
+                    dirtyFlag = false;
+                } else {
+                    planResult.classList.add('hidden');
+                    noPlan.classList.remove('hidden');
+                }
+            });
+
+            function adjustDateRange() {
+                const earliest = getEarliestDeadline();
+                const latest = getLatestDeadline();
+                if (!earliest || !latest) return;
+                startDateInput.value = earliest;
+                endDateInput.value = latest;
+            }
+
+            function getEarliestDeadline() {
+                let earliest = null;
+                goals.forEach(g => {
+                    (g.subgoals.length ? g.subgoals : [g]).forEach(t => {
+                        const d = new Date(t.deadline);
+                        if (!earliest || d < earliest) earliest = d;
+                    });
+                });
+                return earliest ? formatDate(earliest.toISOString().split('T')[0]) : null;
+            }
+
+            function getLatestDeadline() {
+                let latest = null;
+                goals.forEach(g => {
+                    (g.subgoals.length ? g.subgoals : [g]).forEach(t => {
+                        const d = new Date(t.deadline);
+                        if (!latest || d > latest) latest = d;
+                    });
+                });
+                return latest ? formatDate(latest.toISOString().split('T')[0]) : null;
+            }
+
+            function updateProgressStats() {
+                const cbs = document.querySelectorAll('#plan-table .task-checkbox');
+                const total = cbs.length;
+                const completed = Array.from(cbs).filter(cb => cb.checked).length;
+                completedSpan.textContent = completed; totalPlanTasksSpan.textContent = total;
+                progressStats.classList.remove('hidden');
+            }
+
+            function handleCheckboxChange(e) {
+                const cb = e.target, taskId = cb.dataset.taskId;
+                if (!taskId) return;
+                completedTasks[taskId] = cb.checked;
+                const label = cb.parentElement.querySelector('.task-label');
+                if (label) label.classList.toggle('task-completed', cb.checked);
+                updateProgressStats();
+            }
+
+            // 核心任务分配算法
+            function generatePlanTable(start, end, daily) {
+                planTable.innerHTML = '';
+                document.querySelectorAll('.success-message, .error-message, .filter-info').forEach(el => el.remove());
+
+                const dates = getDatesInRange(start, end);
+                if (!dates.length) { showErrorModal('日期范围无效'); return { success: false }; }
+                if (dates.length > settings.maxDays) {
+                    showErrorModal(`计划天数（${dates.length}天）超过了最大设置天数（${settings.maxDays}天）。`);
+                    return { success: false };
+                }
+
+                let minSplit = 0.2;
+                if (settings.density === 'dense') minSplit = 0.5;
+                else if (settings.density === 'sparse') minSplit = 0.1;
+
+                let tasks = [], expired = [];
+                goals.forEach(g => {
+                    if (g.subgoals.length) {
+                        g.subgoals.forEach(s => {
+                            const t = { id: s.id, goalId: g.id, name: `${g.name} - ${s.name}`, priority: s.priority, estimate: s.estimate, deadline: s.deadline, taskId: `${g.id}-${s.id}` };
+                            (settings.filterToday && isTaskExpired(s.deadline) ? expired : tasks).push(t);
+                        });
+                    } else {
+                        const t = { id: g.id, goalId: g.id, name: g.name, priority: g.priority, estimate: g.estimate, deadline: g.deadline, taskId: `${g.id}` };
+                        (settings.filterToday && isTaskExpired(g.deadline) ? expired : tasks).push(t);
+                    }
+                });
+
+                if (expired.length && settings.filterToday) {
+                    const filterDiv = document.createElement('div');
+                    filterDiv.className = 'filter-info';
+                    filterDiv.innerHTML = `已忽略 ${expired.length} 个过期任务。`;
+                    planTable.parentNode.insertBefore(filterDiv, planTable);
+                }
+                if (!tasks.length) { showErrorModal('没有需要规划的任务。'); return { success: false }; }
+
+                tasks.sort((a,b) => {
+                    const order = { high:1, medium:2, low:3 };
+                    if (order[a.priority] !== order[b.priority]) return order[a.priority] - order[b.priority];
+                    return a.deadline.localeCompare(b.deadline);
+                });
+
+                const schedule = {};
+                dates.forEach(d => schedule[d] = []);
+
+                let queue = tasks.map(t => ({ ...t, remaining: t.estimate }));
+                let dayIdx = 0;
+                const maxIter = 10000;
+                let iter = 0;
+
+                while (queue.length > 0 && dayIdx < dates.length && iter < maxIter) {
+                    iter++;
+                    const curDate = dates[dayIdx];
+                    const curDateObj = new Date(curDate);
+                    curDateObj.setHours(0,0,0,0);
+                    let used = schedule[curDate].reduce((sum, t) => sum + t.estimate, 0);
+                    const nextQueue = [];
+
+                    for (let i = 0; i < queue.length; i++) {
+                        const task = queue[i];
+                        const taskDeadline = new Date(task.deadline);
+                        taskDeadline.setHours(0,0,0,0);
+
+                        if (taskDeadline < curDateObj) continue;
+
+                        const available = daily - used;
+                        if (available <= 0.01) {
+                            nextQueue.push(...queue.slice(i));
+                            break;
+                        }
+
+                        if (task.remaining <= available + 0.01) {
+                            schedule[curDate].push({ ...task, estimate: task.remaining, isSplit: task.remaining < task.estimate });
+                            used += task.remaining;
+                        } else if (settings.taskRollover && available > minSplit) {
+                            schedule[curDate].push({ ...task, estimate: available, isSplit: true });
+                            task.remaining -= available;
+                            used = daily;
+                            nextQueue.push(task);
+                        } else {
+                            nextQueue.push(task);
+                        }
+                    }
+                    queue = nextQueue;
+                    dayIdx++;
+                }
+
+                if (queue.length > 0) {
+                    const violations = [];
+                    const lastDate = new Date(dates[dates.length-1]);
+                    lastDate.setHours(0,0,0,0);
+                    queue.forEach(t => {
+                        const taskDeadline = new Date(t.deadline);
+                        taskDeadline.setHours(0,0,0,0);
+                        if (taskDeadline < lastDate || dayIdx >= dates.length) violations.push(t);
+                    });
+
+                    if (violations.length > 0) {
+                        let msg = '以下任务无法在截止日期前完成：\n';
+                        violations.forEach(v => msg += `• ${v.name} (剩余: ${formatTime(v.remaining)}, 截止: ${v.deadline})\n`);
+                        msg += '\n建议：提前开始日期或增加每日学习时间。';
+                        showErrorModal(msg);
+                        return { success: false };
+                    } else {
+                        let msg = `警告：有 ${queue.length} 个任务可能无法在截止日期前完成。\n`;
+                        queue.forEach(t => msg += `• ${t.name} (剩余: ${formatTime(t.remaining)})\n`);
+                        showErrorModal(msg);
+                        return { success: false };
+                    }
+                }
+
+                const tbody = document.createElement('tbody');
+                dates.forEach(date => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `<td>${formatDate(date)}</td>`;
+                    const taskCell = document.createElement('td'), timeCell = document.createElement('td');
+                    const dayTasks = schedule[date] || [];
+                    let total = 0;
+                    if (dayTasks.length) {
+                        const ul = document.createElement('ul'); ul.style.listStyle = 'none'; ul.style.padding = '0';
+                        dayTasks.forEach(t => {
+                            const li = document.createElement('li'); li.className = 'task-item';
+                            const isCompleted = completedTasks[t.taskId] || false;
+                            const cb = document.createElement('input');
+                            cb.type = 'checkbox'; cb.className = 'task-checkbox'; cb.dataset.taskId = t.taskId; cb.checked = isCompleted;
+                            cb.addEventListener('change', handleCheckboxChange);
+                            const label = document.createElement('span');
+                            label.className = `task-label priority-${t.priority}${isCompleted ? ' task-completed' : ''}`;
+                            label.textContent = `${t.name}${t.isSplit ? ' (部分)' : ''}`;
+                            const timeSpan = document.createElement('span');
+                            timeSpan.textContent = ` (${formatTime(t.estimate)})`; timeSpan.style.color = 'var(--text-secondary)';
+                            li.appendChild(cb); li.appendChild(label); li.appendChild(timeSpan);
+                            ul.appendChild(li);
+                            total += t.estimate;
+                        });
+                        taskCell.appendChild(ul);
+                    } else taskCell.textContent = '无任务';
+                    timeCell.textContent = total.toFixed(1);
+                    if (total >= daily * 0.9) timeCell.style.backgroundColor = 'rgba(16,185,129,0.1)';
+                    row.appendChild(taskCell); row.appendChild(timeCell);
+                    tbody.appendChild(row);
+                });
+
+                const thead = document.createElement('thead');
+                thead.innerHTML = '<tr><th>日期</th><th>任务安排</th><th>总时间 (小时)</th></tr>';
+                planTable.appendChild(thead); planTable.appendChild(tbody);
+
+                const successDiv = document.createElement('div');
+                successDiv.className = 'success-message';
+                successDiv.innerHTML = `✓ 计划生成成功！已部署 ${Object.values(schedule).flat().length} 个任务。`;
+                planTable.parentNode.insertBefore(successDiv, planTable);
+
+                return { success: true };
+            }
+
+            function getDatesInRange(s, e) {
+                const dates = [], cur = new Date(s), end = new Date(e);
+                if (isNaN(cur) || isNaN(end)) return dates;
+                while (cur <= end) {
+                    dates.push(cur.toISOString().split('T')[0]);
+                    cur.setDate(cur.getDate() + 1);
+                }
+                return dates;
+            }
+
+            function updateStats() {
+                let tTasks = 0, tHours = 0, high = 0;
+                goals.forEach(g => {
+                    if (g.subgoals.length) {
+                        tTasks += g.subgoals.length;
+                        g.subgoals.forEach(s => { tHours += s.estimate; if (s.priority === 'high') high++; });
+                    } else {
+                        tTasks++; tHours += g.estimate; if (g.priority === 'high') high++;
+                    }
+                });
+                const start = new Date(startDateInput.value), end = new Date(endDateInput.value);
+                const days = Math.ceil((end - start) / 86400000) + 1;
+                totalTasksSpan.textContent = tTasks;
+                totalHoursSpan.textContent = tHours.toFixed(1);
+                highPrioritySpan.textContent = high;
+                avgDailySpan.textContent = days > 0 ? (tHours / days).toFixed(1) : '0';
+                statsMessage.classList.add('hidden'); statsContent.classList.remove('hidden');
+            }
+
+            // 导出/导入
+            window.exportPlanCode = function() {
+                const exportData = { goals, settings };
+                const compressed = LZString.compressToBase64(JSON.stringify(exportData));
+                exportCode.value = compressed; exportModal.classList.remove('hidden');
+            };
+            window.importPlanCode = function() {
+                const code = importCode.value.trim();
+                if (!code) return alert('请输入计划代码');
+                try {
+                    const decomp = LZString.decompressFromBase64(code);
+                    if (!decomp) throw new Error('无效的代码');
+                    const imported = JSON.parse(decomp);
+                    if (!imported.goals || !imported.settings) throw new Error('数据格式错误');
+                    goals = imported.goals; 
+                    settings = { ...DEFAULT_SETTINGS, ...imported.settings };
+                    if (!['sparse', 'normal', 'dense'].includes(settings.density)) settings.density = DEFAULT_SETTINGS.density;
+                    if (!['light', 'dark'].includes(settings.theme)) settings.theme = DEFAULT_SETTINGS.theme;
+                    if (!['blue', 'green', 'purple', 'orange'].includes(settings.primary)) settings.primary = DEFAULT_SETTINGS.primary;
+                    if (!['off', 'subtle', 'bouncy'].includes(settings.animation)) settings.animation = DEFAULT_SETTINGS.animation;
+                    applyThemeAndAnimation();
+                    completedTasks = {};
+                    renderGoals();
+                    saveSettings();
+                    closeImportModal();
+                    dirtyFlag = true;
+                    alert('导入成功！');
+                    if (planTable.rows.length > 0) generatePlanButton.click();
+                } catch (e) {
+                    alert('导入失败：' + e.message);
+                }
+            };
+
+            // 导出Excel（兼容 xlsx-style）
+            exportExcelButton.addEventListener('click', function() {
+                if (!planTable.rows || planTable.rows.length <= 1) return alert('没有可导出的数据');
+
+                if (typeof XLSX === 'undefined') {
+                    alert('Excel 导出库未加载，请刷新页面重试。');
+                    return;
+                }
+
+                try {
+                    // 1. 准备表格数据
+                    const data = [['日期', '任务安排', '总时间 (小时)']];
+                    const rows = planTable.querySelectorAll('tr');
+                    for (let i = 1; i < rows.length; i++) {
+                        const cells = rows[i].querySelectorAll('td');
+                        const rowData = [];
+                        rowData.push(cells[0].textContent); // 日期
+
+                        const tasks = cells[1].querySelectorAll('li');
+                        if (tasks.length) {
+                            let taskText = '';
+                            tasks.forEach((li, index) => {
+                                const label = li.querySelector('.task-label');
+                                const time = li.querySelector('span:last-child');
+                                taskText += (label ? label.textContent : '') + (time ? time.textContent : '');
+                                if (index < tasks.length - 1) taskText += '\n';
+                            });
+                            rowData.push(taskText);
+                        } else {
+                            rowData.push(cells[1].textContent);
+                        }
+
+                        rowData.push(parseFloat(cells[2].textContent) || 0);
+                        data.push(rowData);
+                    }
+
+                    // 2. 创建工作表（手动构建）
+                    const ws = {};
+                    const range = { s: { r: 0, c: 0 }, e: { r: data.length - 1, c: data[0].length - 1 } };
+                    for (let R = 0; R < data.length; R++) {
+                        for (let C = 0; C < data[R].length; C++) {
+                            const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+                            let cellType = 's';
+                            let cellValue = data[R][C];
+                            if (C === 2 && typeof data[R][C] === 'number') {
+                                cellType = 'n';
+                                cellValue = data[R][C];
+                            }
+                            ws[cellRef] = { t: cellType, v: cellValue };
+                        }
+                    }
+                    ws['!ref'] = XLSX.utils.encode_range(range);
+
+                    // 3. 设置列宽
+                    ws['!cols'] = [
+                        { wch: 12 },
+                        { wch: 50 },
+                        { wch: 12 }
+                    ];
+
+                    // 4. 设置行高
+                    ws['!rows'] = [];
+                    ws['!rows'][0] = { hpt: 30 };
+                    for (let i = 1; i < data.length; i++) {
+                        ws['!rows'][i] = { hpt: 45 };
+                    }
+
+                    // 5. 设置样式
+                    for (let r = 0; r < data.length; r++) {
+                        for (let c = 0; c < 3; c++) {
+                            const cellRef = XLSX.utils.encode_cell({ r: r, c: c });
+                            if (!ws[cellRef].s) ws[cellRef].s = {};
+                            ws[cellRef].s.border = {
+                                top: { style: 'thin', color: { rgb: "CCCCCC" } },
+                                bottom: { style: 'thin', color: { rgb: "CCCCCC" } },
+                                left: { style: 'thin', color: { rgb: "CCCCCC" } },
+                                right: { style: 'thin', color: { rgb: "CCCCCC" } }
+                            };
+                            ws[cellRef].s.alignment = {
+                                vertical: 'top',
+                                wrapText: true
+                            };
+                            if (r === 0) {
+                                ws[cellRef].s.font = {
+                                    bold: true,
+                                    sz: 12,
+                                    name: '微软雅黑'
+                                };
+                            }
+                        }
+                    }
+
+                    // 6. 创建 Workbook
+                    const wb = {
+                        SheetNames: [],
+                        Sheets: {}
+                    };
+                    const sheetName = "时间规划表";
+                    wb.SheetNames.push(sheetName);
+                    wb.Sheets[sheetName] = ws;
+
+                    // 7. 导出文件
+                    if (typeof XLSX.write === 'function') {
+                        const wbData = XLSX.write(wb, { bookType: 'xlsx', type: 'binary' });
+                        const buffer = new ArrayBuffer(wbData.length);
+                        const view = new Uint8Array(buffer);
+                        for (let i = 0; i < wbData.length; i++) {
+                            view[i] = wbData.charCodeAt(i) & 0xFF;
+                        }
+                        const blob = new Blob([buffer], { type: 'application/octet-stream' });
+                        const link = document.createElement('a');
+                        link.href = URL.createObjectURL(blob);
+                        link.download = "时间规划表.xlsx";
+                        link.click();
+                        URL.revokeObjectURL(link.href);
+                    } else if (typeof XLSX.writeFile === 'function') {
+                        XLSX.writeFile(wb, "时间规划表.xlsx");
+                    } else {
+                        throw new Error('当前 XLSX 库不支持写入操作，无法导出。');
+                    }
+                } catch (e) {
+                    console.error('导出错误:', e);
+                    alert('导出失败：' + e.message);
+                }
+            });
+
+            printPlanButton.addEventListener('click', () => window.print());
+
+            resetAllButton.addEventListener('click', function() {
+                if (confirm('确定要重置当前计划吗？归档记录不会受影响。')) {
+                    goals = [];
+                    completedTasks = {};
+                    renderGoals();
+                    planResult.classList.add('hidden');
+                    noPlan.classList.remove('hidden');
+                    statsContent.classList.add('hidden');
+                    statsMessage.classList.remove('hidden');
+                    progressStats.classList.add('hidden');
+                    reminderBanner.classList.add('hidden');
+                    initializeDates();
+                    resetGoalForm();
+                    closeAddSubgoalModal();
+                    closeGoalModal();
+                    closeSubgoalModal();
+                    dirtyFlag = false;
+                }
+            });
+
+            // 归档工具栏事件
+            const toggleBatchBtn = document.getElementById('toggle-batch-mode');
+            if (toggleBatchBtn) {
+                toggleBatchBtn.addEventListener('click', toggleBatchMode);
+            }
+
+            const selectAllCheckbox = document.getElementById('select-all-archives');
+            const deleteSelectedBtn = document.getElementById('delete-selected-archives');
+            const clearAllBtn = document.getElementById('clear-all-archives');
+
+            if (selectAllCheckbox) {
+                selectAllCheckbox.addEventListener('change', function() {
+                    const checkboxes = document.querySelectorAll('.archive-checkbox');
+                    checkboxes.forEach(cb => cb.checked = selectAllCheckbox.checked);
+                });
+            }
+
+            if (deleteSelectedBtn) {
+                deleteSelectedBtn.addEventListener('click', function() {
+                    const selectedIds = [];
+                    document.querySelectorAll('.archive-checkbox:checked').forEach(cb => {
+                        selectedIds.push(cb.value);
+                    });
+                    if (selectedIds.length === 0) {
+                        alert('请至少选择一个归档项');
+                        return;
+                    }
+                    if (confirm(`确定删除选中的 ${selectedIds.length} 个归档记录吗？`)) {
+                        archives = archives.filter(a => !selectedIds.includes(a.id.toString()));
+                        saveArchives();
+                        if (batchMode) toggleBatchMode(); // 退出批量模式
+                        renderArchives();
+                        if (window.currentViewArchiveId && selectedIds.includes(window.currentViewArchiveId.toString())) {
+                            closeArchiveDetail();
+                        }
+                    }
+                });
+            }
+
+            if (clearAllBtn) {
+                clearAllBtn.addEventListener('click', function() {
+                    if (archives.length === 0) return;
+                    if (confirm('确定清空所有归档记录吗？此操作不可撤销。')) {
+                        archives = [];
+                        saveArchives();
+                        if (batchMode) toggleBatchMode();
+                        renderArchives();
+                        closeArchiveDetail();
+                    }
+                });
+            }
+
+            // 点击外部关闭弹窗
+            [settingsModal, addSubgoalModal, goalModal, subgoalModal, importModal, exportModal, errorModal].forEach(modal => {
+                if (modal) modal.addEventListener('click', e => { if (e.target === modal) modal.classList.add('hidden'); });
+            });
+
+            document.addEventListener('keydown', e => {
+                if (e.key === 'Escape') {
+                    [settingsModal, addSubgoalModal, goalModal, subgoalModal, importModal, exportModal, errorModal].forEach(m => m && m.classList.add('hidden'));
+                }
+            });
+
+            // 添加 beforeunload 事件监听
+            window.addEventListener('beforeunload', function(e) {
+                if (dirtyFlag) {
+                    e.preventDefault();
+                    e.returnValue = '您有未保存的更改，确定要离开吗？';
+                    return '您有未保存的更改，确定要离开吗？';
+                }
+            });
+
+            // 初始渲染
+            renderGoals();
+            applyThemeAndAnimation();
+        })();
+    </script>
+</body>
+</html>
