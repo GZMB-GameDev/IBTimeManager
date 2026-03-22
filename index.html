@@ -90,6 +90,108 @@
         .modal-overlay:not(.hidden) { animation: modalFadeIn 0.2s ease; }
         @keyframes modalFadeIn { from { opacity: 0; } to { opacity: 1; } }
 
+        /* ========== UI交互动效（基于设置） ========== */
+        /* 动效速度 */
+        .ui-speed-slow { --ui-anim-duration: 0.4s; }
+        .ui-speed-normal { --ui-anim-duration: 0.25s; }
+        .ui-speed-fast { --ui-anim-duration: 0.15s; }
+        
+        /* 淡入动效 */
+        .ui-anim-fade .card, .ui-anim-fade .goal-item, .ui-anim-fade .subgoal-item, .ui-anim-fade .archive-item, .ui-anim-fade .task-item {
+            transition: opacity var(--ui-anim-duration) ease, transform var(--ui-anim-duration) ease, box-shadow var(--ui-anim-duration) ease, background var(--ui-anim-duration) ease, border-color var(--ui-anim-duration) ease;
+        }
+        .ui-anim-fade .card:hover { opacity: 0.95; transform: translateY(-2px); }
+        .ui-anim-fade .goal-item:hover { transform: translateX(4px); }
+        
+        /* 缩放动效 */
+        .ui-anim-scale .card, .ui-anim-scale .goal-item, .ui-anim-scale .subgoal-item, .ui-anim-scale .archive-item, .ui-anim-scale .task-item {
+            transition: transform var(--ui-anim-duration) ease, box-shadow var(--ui-anim-duration) ease, background var(--ui-anim-duration) ease, border-color var(--ui-anim-duration) ease;
+        }
+        .ui-anim-scale .card:hover { transform: scale(1.01); box-shadow: var(--shadow-md); }
+        .ui-anim-scale .goal-item:hover { transform: scale(1.02); }
+        .ui-anim-scale button:hover { transform: scale(1.05); }
+        .ui-anim-scale .sidebar-item:hover { transform: scale(1.02); }
+        
+        /* 滑动动效 */
+        .ui-anim-slide .card, .ui-anim-slide .goal-item, .ui-anim-slide .subgoal-item, .ui-anim-slide .archive-item, .ui-anim-slide .task-item {
+            transition: transform var(--ui-anim-duration) ease, box-shadow var(--ui-anim-duration) ease, background var(--ui-anim-duration) ease, border-color var(--ui-anim-duration) ease;
+        }
+        .ui-anim-slide .card:hover { transform: translateX(4px); }
+        .ui-anim-slide .goal-item:hover { transform: translateX(8px); }
+        .ui-anim-slide .sidebar-item:hover { transform: translateX(6px); }
+        .ui-anim-slide button:hover { transform: translateY(-3px); }
+        
+        /* 关闭动效时保持基本过渡 */
+        .ui-anim-none .card, .ui-anim-none .goal-item, .ui-anim-none .subgoal-item, .ui-anim-none .archive-item, .ui-anim-none .task-item, .ui-anim-none button, .ui-anim-none .sidebar-item {
+            transition: none;
+        }
+        
+        /* 输入框和按钮的基础动效（始终保持） */
+        input, select, textarea, button {
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, transform 0.2s ease;
+        }
+        .sidebar-item {
+            transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+        }
+
+        /* ========== 简洁悬停动画（归档区域除外）========== */
+        
+        /* 卡片悬停 - 缩放+移动+边框 */
+        .hover-anim-enabled .main-view .card {
+            transition: transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        .hover-anim-enabled .main-view .card:hover {
+            transform: translateY(-6px) scale(1.02);
+            z-index: 10;
+            position: relative;
+        }
+        
+        /* 目标项悬停 */
+        .hover-anim-enabled .main-view .goal-item {
+            transition: transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        .hover-anim-enabled .main-view .goal-item:hover {
+            transform: translateY(-3px) scale(1.01);
+        }
+        
+        /* 侧边栏悬停 */
+        .hover-anim-enabled .sidebar-item {
+            transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        .hover-anim-enabled .sidebar-item:hover {
+            transform: translateX(4px);
+        }
+        .hover-anim-enabled .sidebar-item.active:hover {
+            transform: translateX(4px);
+        }
+        
+        /* 按钮悬停 */
+        .hover-anim-enabled .main-view button {
+            transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        .hover-anim-enabled .main-view button:hover {
+            transform: scale(1.03);
+        }
+        
+        /* 边框高亮 - 仅在shimmer类型时 */
+        .hover-anim-enabled.ui-anim-shimmer .card:hover {
+            box-shadow: inset 0 0 0 2px var(--primary-400, #60a5fa);
+        }
+        
+        /* 关闭动画时 */
+        .hover-anim-disabled .card,
+        .hover-anim-disabled .sidebar-item,
+        .hover-anim-disabled button,
+        .hover-anim-disabled .goal-item {
+            transition: none !important;
+        }
+        .hover-anim-disabled .card:hover,
+        .hover-anim-disabled .goal-item:hover,
+        .hover-anim-disabled .sidebar-item:hover,
+        .hover-anim-disabled button:hover {
+            transform: none !important;
+        }
+
         /* ========== 加载界面 ========== */
         .loading-overlay {
             position: fixed;
@@ -807,7 +909,7 @@
                                 </div>
                                 <div id="no-plan" class="instructions" style="background:var(--ui-tier3-bg); border-radius:20px; padding:24px; text-align:center;">
                                     <i class="fas fa-calendar-times" style="font-size:2rem; color:var(--text-secondary);"></i>
-                                    <p>还没有生成计划。请先在左侧添加目标并设置日期范围，然后点击“生成计划”。</p>
+                                    <p>还没有生成计划。请先在左侧添加目标并设置日期范围，然后点击"生成计划"。</p>
                                 </div>
                             </div>
                             <div class="card" style="margin-top:20px;">
@@ -920,36 +1022,85 @@
             <div class="form-group"><label>🔶 强调色</label><div class="color-options" style="display:flex; flex-wrap:wrap; gap:8px;"><div class="color-btn" style="background:#14b8a6;" data-accent="teal" onclick="window.setAccent('teal')" title="青色"></div><div class="color-btn" style="background:#3b82f6;" data-accent="blue" onclick="window.setAccent('blue')" title="蓝色"></div><div class="color-btn" style="background:#8b5cf6;" data-accent="purple" onclick="window.setAccent('purple')" title="紫色"></div><div class="color-btn" style="background:#ec4899;" data-accent="pink" onclick="window.setAccent('pink')" title="粉色"></div><div class="color-btn" style="background:#f97316;" data-accent="orange" onclick="window.setAccent('orange')" title="橙色"></div><div class="color-btn" style="background:#ef4444;" data-accent="red" onclick="window.setAccent('red')" title="红色"></div><div class="color-btn" style="background:#eab308;" data-accent="yellow" onclick="window.setAccent('yellow')" title="黄色"></div></div></div>
             <div class="form-group"><label>🎨 自定义颜色</label><div style="display:flex; align-items:center; gap:12px;"><input type="color" id="settings-custom-primary" value="#3b82f6" onchange="window.applyCustomColor(this.value)" style="width:50px; height:35px; border:none; cursor:pointer; border-radius:4px;"><span id="custom-color-preview" style="width:24px; height:24px; border-radius:4px; background:#3b82f6; display:inline-block; vertical-align:middle;"></span><span class="text-secondary" style="font-size:0.85rem;">主色</span><input type="color" id="settings-custom-accent" value="#14b8a6" onchange="window.applyCustomAccent(this.value)" style="width:50px; height:35px; border:none; cursor:pointer; border-radius:4px;"><span id="custom-accent-preview" style="width:24px; height:24px; border-radius:4px; background:#14b8a6; display:inline-block; vertical-align:middle;"></span><span class="text-secondary" style="font-size:0.85rem;">强调色</span></div></div>
             <hr><h3>✨ 动画设置</h3>
-            <div class="form-group"><select id="settings-animation"><option value="off">🚫 关闭</option><option value="subtle" selected>🌸 柔和</option><option value="bouncy">🤸 活泼</option></select></div>
+            <div class="form-group"><label style="display: flex; align-items: center; gap: 12px;"><span class="switch"><input type="checkbox" id="settings-enable-hover-anim" checked><span class="slider"></span></span><span>开启悬停动效</span></label></div>
             <div class="modal-footer" style="display:flex; gap:12px; margin-top:24px;"><button onclick="window.saveSettings()" class="btn-success" style="flex:1;">保存设置</button><button onclick="window.closeSettingsModal()" class="btn-danger" style="flex:1;">取消</button></div>
         </div>
     </div>
 
     <div id="about-modal" class="modal-overlay hidden">
-        <div class="modal-content">
+        <div class="modal-content" style="max-width: 480px;">
             <div class="modal-header"><h3><i class="fas fa-info-circle"></i> 关于本工具</h3><button class="modal-close" onclick="window.closeAboutModal()">&times;</button></div>
-            <div style="padding: 10px 0;">
-                <p><strong>规划师 - PlannerPro</strong> 是一款帮助青少年科学管理学习时间的工具。</p>
-                <p>版本：<span class="version-number"></span></p>
-                <p>开发者：Your Name</p>
-                <p>联系方式：example@email.com</p>
-                <p>项目开源：<a href="#" target="_blank">GitHub</a></p>
-                <hr><h4>还有其他大佬开发的程序</h4>
-                <ul><a href="https://ib-ezreview.netlify.app/" target="_blank">易学复习卡片</a></ul>
+            <div style="padding: 8px 0; line-height: 1.8;">
+                <p style="margin-bottom: 16px;"><strong>规划师 - PlannerPro</strong> 是一款帮助青少年科学管理学习时间的工具。</p>
                 
+                <div style="background: var(--ui-tier2-bg); border-radius: 16px; padding: 16px; margin-bottom: 16px;">
+                    <p style="margin-bottom: 8px;"><i class="fas fa-tag" style="color: var(--primary-500); width: 20px;"></i> 版本：<span class="version-number"></span></p>
+                    <p style="margin-bottom: 8px;"><i class="fas fa-user" style="color: var(--primary-500); width: 20px;"></i> 开发者：Your Name</p>
+                    <p style="margin-bottom: 8px;"><i class="fas fa-envelope" style="color: var(--primary-500); width: 20px;"></i> 联系方式：example@email.com</p>
+                    <p><i class="fas fa-code-branch" style="color: var(--primary-500); width: 20px;"></i> 项目开源：<a href="https://github.com/GZMB-GameDev/IBTimeManager" target="_blank" style="color: var(--primary-600);">GitHub</a></p>
+                </div>
+                
+                <hr style="border: none; border-top: 1px solid var(--border-light); margin: 20px 0;">
+                
+                <h4 style="margin-bottom: 12px; color: var(--accent-700);"><i class="fas fa-star" style="margin-right: 8px;"></i>还有其他大佬开发的程序</h4>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <a href="https://ib-ezreview.netlify.app/" target="_blank" style="display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--ui-tier3-bg); border-radius: 12px; color: var(--text-primary); text-decoration: none; transition: all 0.2s;">
+                        <i class="fas fa External-link-alt" style="color: var(--accent-500);"></i>
+                        <span>易学复习卡片</span>
+                    </a>
+                </div>
             </div>
-            <button onclick="window.closeAboutModal()" class="btn-success" style="width:100%; margin-top:10px;">关闭</button>
+            <button onclick="window.closeAboutModal()" class="btn-success" style="width:100%; margin-top: 20px;">关闭</button>
         </div>
     </div>
 
     <div id="tour-modal" class="modal-overlay hidden">
-        <div class="modal-content" style="max-width: 500px;">
-            <div class="modal-header"><h3><i class="fas fa-compass"></i> 欢迎使用规划师 - PlannerPro</h3><button class="modal-close" onclick="window.closeTourModal()">&times;</button></div>
+        <div class="modal-content" style="max-width: 520px;">
+            <div class="modal-header"><h3><i class="fas fa-compass"></i> 欢迎使用规划师</h3><button class="modal-close" onclick="window.closeTourModal()">&times;</button></div>
             <div style="padding: 10px 0;">
-                <p>👋 快速了解核心功能：</p>
-                <ul><li>1️⃣ <strong>添加目标</strong> – 左侧“目标管理”中添加大目标。</li><li>2️⃣ <strong>拆分子目标</strong> – 点击大目标旁的“子目标”按钮。</li><li>3️⃣ <strong>生成计划</strong> – 选择日期范围，点击“生成计划”。</li><li>4️⃣ <strong>归档与恢复</strong> – 计划自动保存到“归档”。</li></ul>
+                <!-- 步骤指示器 -->
+                <div id="tour-steps" style="display: flex; justify-content: center; gap: 8px; margin-bottom: 20px;">
+                    <span class="tour-dot active" data-step="0" style="width: 10px; height: 10px; border-radius: 50%; background: var(--primary-500); cursor: pointer; transition: all 0.3s;"></span>
+                    <span class="tour-dot" data-step="1" style="width: 10px; height: 10px; border-radius: 50%; background: var(--gray-300); cursor: pointer; transition: all 0.3s;"></span>
+                    <span class="tour-dot" data-step="2" style="width: 10px; height: 10px; border-radius: 50%; background: var(--gray-300); cursor: pointer; transition: all 0.3s;"></span>
+                    <span class="tour-dot" data-step="3" style="width: 10px; height: 10px; border-radius: 50%; background: var(--gray-300); cursor: pointer; transition: all 0.3s;"></span>
+                </div>
+                
+                <!-- 步骤内容 -->
+                <div id="tour-content" style="min-height: 180px;">
+                    <!-- 步骤1 -->
+                    <div class="tour-step active" data-step="0" style="display: block; text-align: center; padding: 20px 10px;">
+                        <div style="font-size: 3rem; margin-bottom: 16px;"><i class="fas fa-bullseye" style="color: var(--primary-500);"></i></div>
+                        <h4 style="margin-bottom: 12px; color: var(--primary-700);">添加大目标</h4>
+                        <p style="color: var(--text-secondary); line-height: 1.6;">在左侧"目标管理"区域，填写目标名称、优先级、预估时间，点击添加按钮创建大目标。</p>
+                    </div>
+                    <!-- 步骤2 -->
+                    <div class="tour-step" data-step="1" style="display: none; text-align: center; padding: 20px 10px;">
+                        <div style="font-size: 3rem; margin-bottom: 16px;"><i class="fas fa-tasks" style="color: var(--accent-500);"></i></div>
+                        <h4 style="margin-bottom: 12px; color: var(--accent-700);">拆分子目标</h4>
+                        <p style="color: var(--text-secondary); line-height: 1.6;">点击大目标旁边的 <i class="fas fa-plus-circle" style="color: var(--primary-500);"></i> 按钮，为目标添加多个子目标，分配优先级和时间。</p>
+                    </div>
+                    <!-- 步骤3 -->
+                    <div class="tour-step" data-step="2" style="display: none; text-align: center; padding: 20px 10px;">
+                        <div style="font-size: 3rem; margin-bottom: 16px;"><i class="fas fa-magic" style="color: var(--success-500);"></i></div>
+                        <h4 style="margin-bottom: 12px; color: var(--success-700);">生成计划</h4>
+                        <p style="color: var(--text-secondary); line-height: 1.6;">设置计划的开始和结束日期，点击"生成计划"按钮，系统会自动为你分配每天的学习任务！</p>
+                    </div>
+                    <!-- 步骤4 -->
+                    <div class="tour-step" data-step="3" style="display: none; text-align: center; padding: 20px 10px;">
+                        <div style="font-size: 3rem; margin-bottom: 16px;"><i class="fas fa-archive" style="color: var(--warning-500);"></i></div>
+                        <h4 style="margin-bottom: 12px; color: var(--warning-700);">归档与设置</h4>
+                        <p style="color: var(--text-secondary); line-height: 1.6;">完成的计划会自动保存到"归档"。点击右上角"设置"可以自定义主题颜色、背景效果等！</p>
+                    </div>
+                </div>
             </div>
-            <div style="display: flex; gap: 10px; margin-top: 20px;"><button onclick="window.closeTourModal()" class="btn-success" style="flex: 1;">知道了</button></div>
+            
+            <!-- 导航按钮 -->
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button id="tour-prev" onclick="window.tourPrev()" class="btn-info" style="flex: 1; display: none;">上一步</button>
+                <button id="tour-next" onclick="window.tourNext()" class="btn-success" style="flex: 1;">下一步</button>
+                <button id="tour-finish" onclick="window.closeTourModal()" class="btn-success" style="flex: 1; display: none;">开始使用</button>
+            </div>
         </div>
     </div>
 
@@ -1034,15 +1185,16 @@
             let lastReminderDate = '';
             let lastGeneratedState = null;
 
-            const APP_VERSION = 'v79.0.0';
+            const APP_VERSION = '1.6';
             const TOUR_SEEN_KEY = 'tourSeen';
             const FEEDBACK_URL = 'https://example.com/your-survey';
 
             const DEFAULT_SETTINGS = {
                 dailyHours: 6, taskRollover: true, maxDays: 30, filterToday: true, density: 'normal',
                 advanceReminder: 0, dailyReminderEnable: false, dailyReminderTime: "20:00",
-                theme: 'light', primary: 'blue', accent: 'teal', customPrimary: '#3b82f6', customAccent: '#14b8a6', colorPreset: 'ocean', animation: 'subtle',
-                showExpiredTasks: false, autoDateRange: true, backgroundEffect: 'none'
+                theme: 'light', primary: 'blue', accent: 'teal', customPrimary: '#3b82f6', customAccent: '#14b8a6', colorPreset: 'ocean',
+                showExpiredTasks: false, autoDateRange: true, backgroundEffect: 'none',
+                enableHoverAnim: true
             };
             // 预设配色方案
             const COLOR_PRESETS = {
@@ -1066,6 +1218,7 @@
                 yellow: { 500: '#eab308', 600: '#ca8a04', 700: '#a16207', 50: '#fefce8', 100: '#fef9c3' }
             };
             let settings = { ...DEFAULT_SETTINGS };
+            window.currentTourStep = 0;
 
             function loadSettingsAndArchives() {
                 const savedSettings = localStorage.getItem('planSettings');
@@ -1076,8 +1229,8 @@
                         if (!['blue','green','purple','orange','red','pink','cyan','yellow','teal','custom'].includes(settings.primary)) settings.primary = DEFAULT_SETTINGS.primary;
                         if (!['teal','blue','purple','pink','orange','red','yellow'].includes(settings.accent)) settings.accent = DEFAULT_SETTINGS.accent;
                         if (!['ocean','forest','sunset','aurora','rose','mint','lemon','royal'].includes(settings.colorPreset)) settings.colorPreset = DEFAULT_SETTINGS.colorPreset;
-                        if (!['off','subtle','bouncy'].includes(settings.animation)) settings.animation = DEFAULT_SETTINGS.animation;
                         if (!['none','gradient','glow','rainbow','sunset'].includes(settings.backgroundEffect)) settings.backgroundEffect = DEFAULT_SETTINGS.backgroundEffect;
+                        if (typeof settings.enableHoverAnim !== 'boolean') settings.enableHoverAnim = DEFAULT_SETTINGS.enableHoverAnim;
                     } catch(e) { settings = { ...DEFAULT_SETTINGS }; }
                 }
                 const savedArchives = localStorage.getItem('planArchives');
@@ -1132,6 +1285,21 @@
                 document.body.classList.remove('bg-effect-none', 'bg-effect-gradient', 'bg-effect-glow', 'bg-effect-rainbow', 'bg-effect-sunset');
                 document.body.classList.add(`bg-effect-${settings.backgroundEffect}`);
             }
+            function applyUIAnimation() {
+                // 移除旧的类
+                document.body.classList.remove('ui-anim-none', 'ui-anim-fade', 'ui-anim-scale', 'ui-anim-slide', 'ui-anim-pulse', 'ui-anim-float', 'ui-anim-shimmer');
+                document.body.classList.remove('ui-speed-slow', 'ui-speed-normal', 'ui-speed-fast');
+                document.body.classList.remove('hover-anim-enabled');
+                // 添加新的类
+                document.body.classList.add(`ui-anim-${settings.uiAnimationType}`);
+                document.body.classList.add(`ui-speed-${settings.uiAnimationSpeed}`);
+                // 悬停动画开关
+                if (settings.enableHoverAnim) {
+                    document.body.classList.add('hover-anim-enabled');
+                }
+            }
+            // 页面加载时应用UI动效
+            applyUIAnimation();
             window.setTheme = function(theme) { settings.theme = theme; applyThemeAndAnimation(); saveSettings(); };
             window.setPrimary = function(primary) { settings.primary = primary; applyThemeAndAnimation(); saveSettings(); };
             window.setAccent = function(accent) { settings.accent = accent; applyThemeAndAnimation(); saveSettings(); };
@@ -1318,7 +1486,7 @@
                 dirtyFlag = true;
                 closeArchiveDetail();
                 
-                alert(`已成功恢复 ${goals.length} 个目标到编辑区，请点击“生成计划”重新规划。`);
+                alert(`已成功恢复 ${goals.length} 个目标到编辑区，请点击"生成计划"重新规划。`);
             };
             document.getElementById('restore-archive-btn').addEventListener('click', window.restoreArchiveToEdit);
 
@@ -1403,7 +1571,6 @@
                 document.getElementById('settings-show-expired').checked = settings.showExpiredTasks;
                 document.getElementById('settings-auto-daterange').checked = settings.autoDateRange;
                 document.getElementById('settings-background-effect').value = settings.backgroundEffect;
-                document.getElementById('settings-animation').value = settings.animation;
                 applyThemeAndAnimation();
                 openModal('settings-modal');
             };
@@ -1420,21 +1587,89 @@
                 settings.showExpiredTasks = document.getElementById('settings-show-expired').checked;
                 settings.autoDateRange = document.getElementById('settings-auto-daterange').checked;
                 settings.backgroundEffect = document.getElementById('settings-background-effect').value;
-                settings.animation = document.getElementById('settings-animation').value;
+                settings.enableHoverAnim = document.getElementById('settings-enable-hover-anim').checked;
                 if (settings.dailyHours < 1) settings.dailyHours = DEFAULT_SETTINGS.dailyHours;
                 if (settings.dailyHours > 24) settings.dailyHours = DEFAULT_SETTINGS.dailyHours;
                 if (settings.maxDays < 1) settings.maxDays = DEFAULT_SETTINGS.maxDays;
                 if (settings.maxDays > 365) settings.maxDays = DEFAULT_SETTINGS.maxDays;
                 if (!['sparse','normal','dense'].includes(settings.density)) settings.density = DEFAULT_SETTINGS.density;
-                if (!['off','subtle','bouncy'].includes(settings.animation)) settings.animation = DEFAULT_SETTINGS.animation;
                 if (!['none','gradient','glow','rainbow','sunset'].includes(settings.backgroundEffect)) settings.backgroundEffect = DEFAULT_SETTINGS.backgroundEffect;
-                applyThemeAndAnimation(); applyBackgroundEffect(); saveSettings(); closeModal('settings-modal'); alert('设置已保存！'); checkAllReminders();
+                if (typeof settings.enableHoverAnim !== 'boolean') settings.enableHoverAnim = DEFAULT_SETTINGS.enableHoverAnim;
+                applyThemeAndAnimation(); applyBackgroundEffect(); applyUIAnimation(); saveSettings(); closeModal('settings-modal'); alert('设置已保存！'); checkAllReminders();
             };
 
             window.openAboutModal  = () => openModal('about-modal');
             window.closeAboutModal = () => closeModal('about-modal');
-            window.openTourModal   = () => openModal('tour-modal');
+            window.openTourModal   = () => { openModal('tour-modal'); window.resetTour(); };
             window.closeTourModal  = () => closeModal('tour-modal');
+            window.resetTour = function() {
+                document.querySelectorAll('.tour-step').forEach(s => s.style.display = 'none');
+                document.querySelectorAll('.tour-dot').forEach(d => d.style.background = 'var(--gray-300)');
+                document.querySelector('.tour-step[data-step="0"]').style.display = 'block';
+                document.querySelector('.tour-dot[data-step="0"]').style.background = 'var(--primary-500)';
+                document.getElementById('tour-prev').style.display = 'none';
+                document.getElementById('tour-next').style.display = 'block';
+                document.getElementById('tour-finish').style.display = 'none';
+                window.currentTourStep = 0;
+            };
+            window.tourNext = function() {
+                const steps = document.querySelectorAll('.tour-step');
+                const dots = document.querySelectorAll('.tour-dot');
+                if (window.currentTourStep < steps.length - 1) {
+                    steps[window.currentTourStep].style.display = 'none';
+                    dots[window.currentTourStep].style.background = 'var(--gray-300)';
+                    window.currentTourStep++;
+                    steps[window.currentTourStep].style.display = 'block';
+                    dots[window.currentTourStep].style.background = 'var(--primary-500)';
+                    document.getElementById('tour-prev').style.display = 'block';
+                    if (window.currentTourStep === steps.length - 1) {
+                        document.getElementById('tour-next').style.display = 'none';
+                        document.getElementById('tour-finish').style.display = 'block';
+                    }
+                }
+            };
+            window.tourPrev = function() {
+                const steps = document.querySelectorAll('.tour-step');
+                const dots = document.querySelectorAll('.tour-dot');
+                if (window.currentTourStep > 0) {
+                    steps[window.currentTourStep].style.display = 'none';
+                    dots[window.currentTourStep].style.background = 'var(--gray-300)';
+                    window.currentTourStep--;
+                    steps[window.currentTourStep].style.display = 'block';
+                    dots[window.currentTourStep].style.background = 'var(--primary-500)';
+                    document.getElementById('tour-next').style.display = 'block';
+                    document.getElementById('tour-finish').style.display = 'none';
+                    if (window.currentTourStep === 0) {
+                        document.getElementById('tour-prev').style.display = 'none';
+                    }
+                }
+            };
+            // 点击圆点跳转
+            document.querySelectorAll('.tour-dot').forEach(dot => {
+                dot.addEventListener('click', function() {
+                    const step = parseInt(this.getAttribute('data-step'));
+                    const steps = document.querySelectorAll('.tour-step');
+                    const dots = document.querySelectorAll('.tour-dot');
+                    steps.forEach(s => s.style.display = 'none');
+                    dots.forEach(d => d.style.background = 'var(--gray-300)');
+                    steps[step].style.display = 'block';
+                    this.style.background = 'var(--primary-500)';
+                    window.currentTourStep = step;
+                    if (step === 0) {
+                        document.getElementById('tour-prev').style.display = 'none';
+                        document.getElementById('tour-next').style.display = 'block';
+                        document.getElementById('tour-finish').style.display = 'none';
+                    } else if (step === steps.length - 1) {
+                        document.getElementById('tour-prev').style.display = 'block';
+                        document.getElementById('tour-next').style.display = 'none';
+                        document.getElementById('tour-finish').style.display = 'block';
+                    } else {
+                        document.getElementById('tour-prev').style.display = 'block';
+                        document.getElementById('tour-next').style.display = 'block';
+                        document.getElementById('tour-finish').style.display = 'none';
+                    }
+                });
+            });
             window.openFeedback    = () => window.open(FEEDBACK_URL, '_blank');
             window.showImportModal = () => openModal('import-modal');
             window.closeImportModal = () => closeModal('import-modal');
@@ -1701,26 +1936,59 @@
                 let remainingCapacity = {};
                 dates.forEach(d => remainingCapacity[d] = effectiveDaily);
                 
-                for (let task of tasks) {
-                    let remaining = task.estimate;
-                    let deadlineIdx = dates.indexOf(task.deadline);
-                    if (deadlineIdx === -1) deadlineIdx = dates.length - 1;
+                // 离散模式：从DDL开始倒着分配任务
+                const isDiscrete = settings.density === 'sparse';
+                
+                if (isDiscrete) {
+                    // 按截止日期从近到远排序（先安排紧急的）
+                    tasks.sort((a, b) => a.deadline.localeCompare(b.deadline));
                     
-                    for (let i = 0; i <= deadlineIdx && remaining > 0; i++) {
-                        const curDate = dates[i];
-                        let cap = remainingCapacity[curDate];
-                        if (cap <= 0) continue;
-                        let take = Math.min(remaining, cap);
-                        if (take > 0) {
-                            schedule[curDate].push({ ...task, estimate: take, isSplit: take < task.estimate });
-                            remainingCapacity[curDate] -= take;
-                            remaining -= take;
+                    for (let task of tasks) {
+                        let remaining = task.estimate;
+                        let deadlineIdx = dates.indexOf(task.deadline);
+                        if (deadlineIdx === -1) deadlineIdx = dates.length - 1;
+                        
+                        // 从截止日期往前分配
+                        for (let i = deadlineIdx; i >= 0 && remaining > 0; i--) {
+                            const curDate = dates[i];
+                            let cap = remainingCapacity[curDate];
+                            if (cap <= 0) continue;
+                            let take = Math.min(remaining, cap);
+                            if (take > 0) {
+                                schedule[curDate].push({ ...task, estimate: take, isSplit: take < task.estimate });
+                                remainingCapacity[curDate] -= take;
+                                remaining -= take;
+                            }
+                        }
+                        
+                        if (remaining > 0) {
+                            showErrorModal(`任务 "${task.name}" 无法在截止日期前完成（剩余 ${formatTime(remaining)}）。`);
+                            return { success: false };
                         }
                     }
-                    
-                    if (remaining > 0) {
-                        showErrorModal(`任务 "${task.name}" 无法在截止日期前完成（剩余 ${formatTime(remaining)}）。`);
-                        return { success: false };
+                } else {
+                    // 普通模式：正序分配
+                    for (let task of tasks) {
+                        let remaining = task.estimate;
+                        let deadlineIdx = dates.indexOf(task.deadline);
+                        if (deadlineIdx === -1) deadlineIdx = dates.length - 1;
+                        
+                        for (let i = 0; i <= deadlineIdx && remaining > 0; i++) {
+                            const curDate = dates[i];
+                            let cap = remainingCapacity[curDate];
+                            if (cap <= 0) continue;
+                            let take = Math.min(remaining, cap);
+                            if (take > 0) {
+                                schedule[curDate].push({ ...task, estimate: take, isSplit: take < task.estimate });
+                                remainingCapacity[curDate] -= take;
+                                remaining -= take;
+                            }
+                        }
+                        
+                        if (remaining > 0) {
+                            showErrorModal(`任务 "${task.name}" 无法在截止日期前完成（剩余 ${formatTime(remaining)}）。`);
+                            return { success: false };
+                        }
                     }
                 }
                 
