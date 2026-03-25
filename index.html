@@ -59,6 +59,15 @@
             --ui-tier1-bg: rgba(40,40,50,0.8);
             --ui-tier2-bg: rgba(50,50,60,0.6);
             --ui-tier3-bg: rgba(60,60,70,0.5);
+            --ui-tier1-border: rgba(255,255,255,0.08);
+            --ui-tier2-border: rgba(255,255,255,0.1);
+            --ui-tier3-border: rgba(255,255,255,0.12);
+            /* 覆盖浅色灰度，防止出现亮白区域 */
+            --gray-50: #2a2a36;
+            --gray-100: #2e2e3c;
+            --gray-200: #3a3a4a;
+            --gray-300: #4a4a5a;
+            --gray-400: #6a6a7a;
         }
         /* 预设主色 + 强调色 */
         [data-primary="blue"] { --accent-50: #f0fdfa; --accent-100: #ccfbf1; --accent-200: #99f6e4; --accent-300: #5eead4; --accent-400: #2dd4bf; --accent-500: #14b8a6; --accent-600: #0d9488; --accent-700: #0f766e; }
@@ -327,6 +336,53 @@
             0% { opacity: 0.5; transform: scale(1); }
             50% { opacity: 0.8; transform: scale(1.1); }
             100% { opacity: 0.5; transform: scale(1); }
+        }
+        /* 深色模式下覆盖所有极浅主色/强调色，防止亮白背景 */
+        [data-theme="dark"] {
+            --primary-50: rgba(255,255,255,0.05);
+            --primary-100: rgba(255,255,255,0.08);
+            --primary-200: rgba(255,255,255,0.12);
+            --accent-50: rgba(255,255,255,0.05);
+            --accent-100: rgba(255,255,255,0.08);
+            --accent-200: rgba(255,255,255,0.12);
+        }
+        /* 深色模式表单控件 */
+        [data-theme="dark"] input,
+        [data-theme="dark"] select,
+        [data-theme="dark"] textarea {
+            background: rgba(50,50,62,0.9);
+            color: var(--text-primary);
+            border-color: rgba(255,255,255,0.12);
+        }
+        [data-theme="dark"] input::placeholder,
+        [data-theme="dark"] textarea::placeholder {
+            color: var(--text-tertiary);
+        }
+        /* 深色模式 sidebar hover */
+        [data-theme="dark"] .sidebar-item:hover {
+            background: rgba(255,255,255,0.07) !important;
+            color: var(--text-primary) !important;
+        }
+        /* 深色模式卡片标题颜色 */
+        [data-theme="dark"] .card-header h2 {
+            color: var(--accent-400);
+        }
+        /* 深色模式 btn-info hover */
+        [data-theme="dark"] .btn-info:hover {
+            background: rgba(255,255,255,0.08) !important;
+            color: var(--accent-400) !important;
+            border-color: var(--accent-500) !important;
+        }
+        /* 深色模式标题渐变 */
+        [data-theme="dark"] .app-header h1 {
+            background: linear-gradient(135deg, var(--primary-400), var(--primary-300));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        /* 深色模式模板选项 */
+        [data-theme="dark"] .template-option {
+            background: rgba(255,255,255,0.06) !important;
         }
         [data-theme="dark"] body.bg-effect-none { background: var(--bg-body-dark); }
         [data-theme="dark"] body.bg-effect-gradient {
@@ -777,6 +833,7 @@
         .success-message { background: var(--success-500); color: white; }
         .error-message { background: var(--danger-500); color: white; }
         .filter-info { background: var(--primary-100); color: var(--primary-800); }
+        [data-theme="dark"] .filter-info { background: rgba(255,255,255,0.08); color: var(--text-secondary); }
         .hidden { display: none !important; }
         .version-tag {
             position: fixed;
@@ -1185,7 +1242,7 @@
             let lastReminderDate = '';
             let lastGeneratedState = null;
 
-            const APP_VERSION = '1.6';
+            const APP_VERSION = '1.7';
             const TOUR_SEEN_KEY = 'tourSeen';
             const FEEDBACK_URL = 'https://v.wjx.cn/vm/YZWC6HZ.aspx';
 
