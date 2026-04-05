@@ -384,6 +384,16 @@
         [data-theme="dark"] .template-option {
             background: rgba(255,255,255,0.06) !important;
         }
+        /* 深色模式 tour-modal 标题颜色 */
+        [data-theme="dark"] .tour-step h4 {
+            color: var(--accent-300) !important;
+        }
+        [data-theme="dark"] .tour-dot {
+            background: var(--gray-500) !important;
+        }
+        [data-theme="dark"] .tour-dot.active {
+            background: var(--primary-400) !important;
+        }
         [data-theme="dark"] body.bg-effect-none { background: var(--bg-body-dark); }
         [data-theme="dark"] body.bg-effect-gradient {
             background: linear-gradient(-45deg, #1a2634, #2c3e50, #1e2a3a, #0f1a24);
@@ -853,16 +863,80 @@
             .sidebar-item { flex: 0 0 auto; }
         }
         @media (max-width: 768px) {
-            .app-header h1 { font-size: 1.4rem; white-space: normal; }
-            .header-actions button { padding: 8px 12px; font-size: 0.9rem; }
-            .card { padding: 16px; }
+            .container {
+                border-radius: 24px;
+                max-width: 100%;
+                padding: 0;
+            }
+            body { padding: 12px; }
+            .app-wrapper { flex-direction: column; }
+            .app-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+                padding: 16px;
+            }
+            .app-header h1 { font-size: 1.3rem; white-space: normal; }
+            .header-actions {
+                width: 100%;
+                justify-content: flex-start;
+            }
+            .header-actions button {
+                padding: 8px 14px;
+                font-size: 0.85rem;
+                flex: 0 0 auto;
+            }
+            .card {
+                padding: 16px;
+                border-radius: 20px;
+            }
+            .card-header h2 { font-size: 1.1rem; }
             .plan-table { min-width: 500px; }
-            .modal-content { padding: 24px; }
+            .modal-content { padding: 20px; }
+            .form-row .form-group { flex: 1 1 100%; min-width: unset; }
+            button {
+                padding: 10px 16px;
+                font-size: 0.9rem;
+            }
         }
         @media (max-width: 480px) {
-            .goal-header > div:last-child button { padding: 6px 10px; font-size: 0.8rem; }
+            body { padding: 8px; }
+            .container { border-radius: 16px; }
+            .app-header {
+                padding: 12px;
+            }
+            .app-header h1 { font-size: 1.1rem; }
+            .header-actions {
+                gap: 6px;
+            }
+            .header-actions button {
+                padding: 6px 10px;
+                font-size: 0.8rem;
+                border-radius: 20px;
+            }
+            .header-actions button i { font-size: 0.9rem; }
+            .card {
+                padding: 14px;
+                border-radius: 16px;
+            }
+            .goal-header { flex-direction: column; align-items: flex-start; }
+            .goal-header > div:last-child { align-self: flex-start; }
+            .goal-header > div:last-child button {
+                padding: 5px 10px;
+                font-size: 0.75rem;
+            }
             .subgoal-item { flex-direction: column; align-items: flex-start; }
-            .subgoal-item > div:last-child { align-self: flex-end; }
+            .subgoal-item > div:last-child { align-self: flex-start; margin-top: 8px; }
+            button {
+                padding: 8px 14px;
+                font-size: 0.85rem;
+                border-radius: 30px;
+                max-width: 100%;
+                width: auto;
+            }
+            .btn-success, .btn-danger, .btn-warning, .btn-info {
+                width: 100%;
+            }
         }
     </style>
 </head>
