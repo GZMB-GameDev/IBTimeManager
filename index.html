@@ -937,6 +937,18 @@
             .btn-success, .btn-danger, .btn-warning, .btn-info {
                 width: 100%;
             }
+            /* 日期/时间选择器紧凑样式 */
+            input[type="date"], input[type="time"], input[type="datetime-local"] {
+                width: auto;
+                min-width: 0;
+                padding: 8px 12px;
+                font-size: 0.9rem;
+            }
+            .form-group:has(input[type="date"]), .form-group:has(input[type="time"]) {
+                display: inline-block;
+                margin-right: 8px;
+                margin-bottom: 8px;
+            }
         }
     </style>
 </head>
@@ -1121,6 +1133,7 @@
             <hr><h3>⏰ 提醒设置</h3>
             <div class="form-group"><label>截止日期提前提醒</label><select id="settings-advance-reminder"><option value="0">不提醒</option><option value="1">提前1天</option><option value="2">提前2天</option><option value="3">提前3天</option><option value="7">提前7天</option></select></div>
             <div class="form-group"><label style="display: flex; align-items: center; gap: 12px;"><span class="switch"><input type="checkbox" id="settings-daily-reminder-enable"><span class="slider"></span></span><span>每日定时提醒</span></label><input type="time" id="settings-daily-reminder-time" value="20:00" style="margin-top:8px;"></div>
+            <div class="form-group"><label style="display: flex; align-items: center; gap: 12px;"><span class="switch"><input type="checkbox" id="settings-system-notification"><span class="slider"></span></span><span>启用系统通知（后台提醒）</span></label><button onclick="window.requestNotificationPermission()" style="margin-top:8px; padding:8px 16px; font-size:0.85rem;">请求通知权限</button></div>
             <hr><h3>🎨 颜色设置</h3>
             <div class="form-group"><label>主题模式</label><div style="display:flex; gap:12px;"><button class="theme-btn" data-theme="light" onclick="window.setTheme('light')" style="flex:1;">☀️ 浅色</button><button class="theme-btn" data-theme="dark" onclick="window.setTheme('dark')" style="flex:1;">🌙 深色</button></div></div>
             <div class="form-group"><label>🎯 预设配色方案</label><div class="color-preset-options" style="display:flex; flex-wrap:wrap; gap:10px;">
@@ -1323,6 +1336,7 @@
             const DEFAULT_SETTINGS = {
                 dailyHours: 6, taskRollover: true, maxDays: 30, filterToday: true, density: 'normal',
                 advanceReminder: 0, dailyReminderEnable: false, dailyReminderTime: "20:00",
+                systemNotification: false,
                 theme: 'light', primary: 'blue', accent: 'teal', customPrimary: '#3b82f6', customAccent: '#14b8a6', colorPreset: 'ocean',
                 showExpiredTasks: false, autoDateRange: true, backgroundEffect: 'none',
                 enableHoverAnim: true
@@ -1677,8 +1691,51 @@
             function isTaskExpired(deadline, referenceDate = null) { const ref = referenceDate ? new Date(referenceDate) : new Date(); const refStr = `${ref.getFullYear()}-${String(ref.getMonth()+1).padStart(2,'0')}-${String(ref.getDate()).padStart(2,'0')}`; return deadline < refStr; }
             function getTodayString() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 
-            function showReminder(msg) { reminderMessage.textContent = msg; reminderBanner.classList.remove('hidden'); setTimeout(() => reminderBanner.classList.add('hidden'), 8000); }
+            function showReminder(msg, title = '规划师提醒') {
+                // 系统通知
+                if (settings.systemNotification && 'Notification' in window && Notification.permission === 'granted') {
+                    try {
+                        new Notification(title, {
+                            body: msg,
+                            icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">⏰</text></svg>',
+                            badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">⏰</text></svg>',
+                            tag: 'planner-reminder',
+                            requireInteraction: false,
+                            silent: false
+                        });
+                    } catch (e) {
+                        console.warn('系统通知发送失败:', e);
+                    }
+                }
+                // 页面内提醒
+                reminderMessage.textContent = msg;
+                reminderBanner.classList.remove('hidden');
+                setTimeout(() => reminderBanner.classList.add('hidden'), 8000);
+            }
             window.hideReminderBanner = () => reminderBanner.classList.add('hidden');
+            window.requestNotificationPermission = async function() {
+                if (!('Notification' in window)) {
+                    alert('您的浏览器不支持系统通知功能');
+                    return;
+                }
+                if (Notification.permission === 'granted') {
+                    alert('通知权限已允许 ✓');
+                    return;
+                }
+                if (Notification.permission === 'denied') {
+                    alert('通知权限已被拒绝，请在浏览器设置中手动开启');
+                    return;
+                }
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                    alert('通知权限已允许！您将收到后台提醒 ✓');
+                    settings.systemNotification = true;
+                    saveSettings();
+                    document.getElementById('settings-system-notification').checked = true;
+                } else {
+                    alert('通知权限被拒绝');
+                }
+            };
 
             function checkDailyReminder() { if (!settings.dailyReminderEnable) return false; const now = new Date(), today = getTodayString(); if (lastReminderDate === today) return false; const [hour, minute] = settings.dailyReminderTime.split(':').map(Number); const reminderTime = new Date(now); reminderTime.setHours(hour, minute, 0, 0); if (now < reminderTime) return false; if (!planTable.rows || planTable.rows.length <= 1) return false; const rows = planTable.querySelectorAll('tr'); let taskCount = 0; for (let i = 1; i < rows.length; i++) { if (rows[i].cells[0]?.textContent === today) { taskCount = rows[i].cells[1]?.querySelectorAll('li').length || 0; break; } } if (taskCount > 0) { showReminder(`⏰ 今天有 ${taskCount} 个任务需要完成，加油！`); lastReminderDate = today; return true; } return false; }
             function checkDeadlineReminders() { if (!settings.advanceReminder) return false; const today = getTodayString(); const tasks = []; goals.forEach(g => { if (g.subgoals.length) { g.subgoals.forEach(s => { if (completedTasks[`${g.id}-${s.id}`]) return; const days = Math.ceil((new Date(s.deadline) - new Date(today)) / 86400000); if (days === settings.advanceReminder) tasks.push(`${g.name} - ${s.name} (截止 ${s.deadline})`); }); } else { if (completedTasks[`${g.id}`]) return; const days = Math.ceil((new Date(g.deadline) - new Date(today)) / 86400000); if (days === settings.advanceReminder) tasks.push(`${g.name} (截止 ${g.deadline})`); } }); if (tasks.length) { showReminder(`⏳ ${tasks.length} 个任务将在 ${settings.advanceReminder} 天后截止：\n${tasks.join('\n')}`); return true; } return false; }
@@ -1699,6 +1756,7 @@
                 document.getElementById('settings-advance-reminder').value = settings.advanceReminder;
                 document.getElementById('settings-daily-reminder-enable').checked = settings.dailyReminderEnable;
                 document.getElementById('settings-daily-reminder-time').value = settings.dailyReminderTime;
+                document.getElementById('settings-system-notification').checked = settings.systemNotification;
                 document.getElementById('settings-show-expired').checked = settings.showExpiredTasks;
                 document.getElementById('settings-auto-daterange').checked = settings.autoDateRange;
                 document.getElementById('settings-background-effect').value = settings.backgroundEffect;
@@ -1715,6 +1773,7 @@
                 settings.advanceReminder = parseInt(document.getElementById('settings-advance-reminder').value) || 0;
                 settings.dailyReminderEnable = document.getElementById('settings-daily-reminder-enable').checked;
                 settings.dailyReminderTime = document.getElementById('settings-daily-reminder-time').value;
+                settings.systemNotification = document.getElementById('settings-system-notification').checked;
                 settings.showExpiredTasks = document.getElementById('settings-show-expired').checked;
                 settings.autoDateRange = document.getElementById('settings-auto-daterange').checked;
                 settings.backgroundEffect = document.getElementById('settings-background-effect').value;
