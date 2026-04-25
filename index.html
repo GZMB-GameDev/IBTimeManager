@@ -534,6 +534,9 @@
         input:focus, select:focus { border-color: var(--accent-500); box-shadow: 0 0 0 3px var(--accent-100); }
         .form-row { display: flex; gap: 12px; flex-wrap: wrap; }
         .form-row .form-group { flex: 1 1 200px; min-width: 150px; }
+        .input-with-unit { position: relative; display: flex; align-items: center; }
+        .input-with-unit input { padding-right: 44px; }
+        .input-with-unit .unit-label { position: absolute; right: 16px; color: var(--text-secondary); font-size: 0.85rem; pointer-events: none; white-space: nowrap; }
         button {
             background: var(--primary-500);
             color: white;
@@ -555,6 +558,8 @@
         .btn-success:hover { background: linear-gradient(135deg, #059669, #047857); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); }
         .btn-danger { background: linear-gradient(135deg, #ef4444, #dc2626); }
         .btn-danger:hover { background: linear-gradient(135deg, #dc2626, #b91c1c); box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); }
+        @keyframes pulse-hint { 0%,100% { box-shadow: 0 0 0 0 rgba(16,185,129,0.6); transform: translateY(0); } 50% { box-shadow: 0 0 0 8px rgba(16,185,129,0); transform: translateY(-2px); } }
+        .btn-pulse-hint { animation: pulse-hint 1.2s ease-in-out 3; }
         .btn-warning { background: linear-gradient(135deg, #f59e0b, #d97706); }
         .btn-warning:hover { background: linear-gradient(135deg, #d97706, #b45309); box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3); }
         .btn-info {
@@ -1019,7 +1024,7 @@
                                 <div class="form-group"><input type="text" id="goal-name" placeholder="目标名称"></div>
                                 <div class="form-row">
                                     <div class="form-group"><select id="goal-priority"><option value="high">🔥 高优先级</option><option value="medium" selected>⚡ 中优先级</option><option value="low">🍃 低优先级</option></select></div>
-                                    <div class="form-group"><input type="number" id="goal-estimate" min="0.1" step="0.1" value="5" placeholder="小时"></div>
+                                    <div class="form-group"><div class="input-with-unit"><input type="number" id="goal-estimate" min="0.1" step="0.1" value="5" placeholder="预估时间"><span class="unit-label">小时</span></div></div>
                                 </div>
                                 <div class="form-group"><input type="date" id="goal-deadline"></div>
                                 <div class="form-group"><select id="goal-template"><option value="none">📁 无模板</option><option value="exam">📚 考试复习模板</option><option value="project">🛠️ 项目化学习模板</option></select></div>
@@ -1270,7 +1275,7 @@
         <div class="modal-content">
             <div class="modal-header"><h3>➕ 添加子目标</h3><button class="modal-close" onclick="window.closeAddSubgoalModal()">&times;</button></div>
             <input type="text" id="modal-add-subgoal-name" placeholder="子目标名称" style="width:100%; padding:12px;">
-            <div class="form-row" style="margin-top:12px;"><select id="modal-add-subgoal-priority" style="flex:1;"><option value="high">🔥 高优先级</option><option value="medium" selected>⚡ 中优先级</option><option value="low">🍃 低优先级</option></select><input type="number" id="modal-add-subgoal-estimate" min="0.1" step="0.1" value="2" placeholder="小时" style="flex:1;"></div>
+            <div class="form-row" style="margin-top:12px;"><select id="modal-add-subgoal-priority" style="flex:1;"><option value="high">🔥 高优先级</option><option value="medium" selected>⚡ 中优先级</option><option value="low">🍃 低优先级</option></select><div class="input-with-unit" style="flex:1;"><input type="number" id="modal-add-subgoal-estimate" min="0.1" step="0.1" value="2" placeholder="预估时间" style="width:100%;"><span class="unit-label">小时</span></div></div>
             <input type="date" id="modal-add-subgoal-deadline" style="width:100%; margin-top:12px; padding:12px;">
             <div id="add-subgoal-time-warning" class="error-message hidden" style="margin-top:10px;">子目标总时间不能超过大目标剩余时间</div>
             <div style="display:flex; gap:12px; margin-top:20px;"><button id="modal-add-subgoal" class="btn-success" style="flex:1;">添加</button><button onclick="window.closeAddSubgoalModal()" class="btn-danger" style="flex:1;">取消</button></div>
@@ -1281,7 +1286,7 @@
         <div class="modal-content">
             <div class="modal-header"><h3>✏️ 编辑大目标</h3><button class="modal-close" onclick="window.closeGoalModal()">&times;</button></div>
             <input type="text" id="modal-goal-name" placeholder="目标名称" style="width:100%; padding:12px;">
-            <div class="form-row" style="margin-top:12px;"><select id="modal-goal-priority" style="flex:1;"><option value="high">🔥 高优先级</option><option value="medium">⚡ 中优先级</option><option value="low">🍃 低优先级</option></select><input type="number" id="modal-goal-estimate" min="0.1" step="0.1" placeholder="小时" style="flex:1;"></div>
+            <div class="form-row" style="margin-top:12px;"><select id="modal-goal-priority" style="flex:1;"><option value="high">🔥 高优先级</option><option value="medium">⚡ 中优先级</option><option value="low">🍃 低优先级</option></select><div class="input-with-unit" style="flex:1;"><input type="number" id="modal-goal-estimate" min="0.1" step="0.1" placeholder="预估时间" style="width:100%;"><span class="unit-label">小时</span></div></div>
             <input type="date" id="modal-goal-deadline" style="width:100%; margin-top:12px; padding:12px;">
             <div style="display:flex; gap:12px; margin-top:20px;"><button id="modal-update-goal" class="btn-success" style="flex:1;">更新</button><button onclick="window.closeGoalModal()" class="btn-danger" style="flex:1;">取消</button></div>
         </div>
@@ -1291,7 +1296,7 @@
         <div class="modal-content">
             <div class="modal-header"><h3>✏️ 编辑子目标</h3><button class="modal-close" onclick="window.closeSubgoalModal()">&times;</button></div>
             <input type="text" id="modal-subgoal-name" placeholder="子目标名称" style="width:100%; padding:12px;">
-            <div class="form-row" style="margin-top:12px;"><select id="modal-subgoal-priority" style="flex:1;"><option value="high">🔥 高优先级</option><option value="medium">⚡ 中优先级</option><option value="low">🍃 低优先级</option></select><input type="number" id="modal-subgoal-estimate" min="0.1" step="0.1" placeholder="小时" style="flex:1;"></div>
+            <div class="form-row" style="margin-top:12px;"><select id="modal-subgoal-priority" style="flex:1;"><option value="high">🔥 高优先级</option><option value="medium">⚡ 中优先级</option><option value="low">🍃 低优先级</option></select><div class="input-with-unit" style="flex:1;"><input type="number" id="modal-subgoal-estimate" min="0.1" step="0.1" placeholder="预估时间" style="width:100%;"><span class="unit-label">小时</span></div></div>
             <input type="date" id="modal-subgoal-deadline" style="width:100%; margin-top:12px; padding:12px;">
             <div style="display:flex; gap:12px; margin-top:20px;"><button id="modal-update-subgoal" class="btn-success" style="flex:1;">更新</button><button onclick="window.closeSubgoalModal()" class="btn-danger" style="flex:1;">取消</button></div>
         </div>
@@ -1679,11 +1684,11 @@
             const reminderMessage = document.getElementById('reminder-message');
 
             function initializeDates() {
-                const today = new Date(), tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
-                const nextWeek = new Date(today); nextWeek.setDate(nextWeek.getDate() + 7);
-                if (goalDeadlineInput) goalDeadlineInput.valueAsDate = tomorrow;
+                const today = new Date(), nextWeek = new Date(today); nextWeek.setDate(nextWeek.getDate() + 7);
+                const twoWeeks = new Date(today); twoWeeks.setDate(twoWeeks.getDate() + 14);
+                if (goalDeadlineInput) goalDeadlineInput.valueAsDate = nextWeek;
                 if (startDateInput) startDateInput.valueAsDate = today;
-                if (endDateInput) endDateInput.valueAsDate = nextWeek;
+                if (endDateInput) endDateInput.valueAsDate = twoWeeks;
             }
             initializeDates();
 
@@ -1904,7 +1909,14 @@
                 if (!name) return alert('请输入目标名称'); if (isNaN(estimate) || estimate <= 0) return alert('请输入有效的预计时间'); if (!deadline) return alert('请选择截止日期');
                 const goal = { id: Date.now(), name, priority, estimate, deadline, subgoals: [] };
                 if (template !== 'none') { const subgoals = generateSubgoalsByTemplate(name, template, estimate, deadline); goal.subgoals = subgoals; }
-                goals.push(goal); renderGoals(); resetGoalForm(); dirtyFlag = true;
+                goals.push(goal); renderGoals(); resetGoalForm(true); dirtyFlag = true;
+                // 若已有计划，高亮提示用户重新生成
+                if (planTable.rows && planTable.rows.length > 0) {
+                    generatePlanButton.classList.remove('btn-pulse-hint');
+                    void generatePlanButton.offsetWidth; // 触发重绘以重置动画
+                    generatePlanButton.classList.add('btn-pulse-hint');
+                    generatePlanButton.addEventListener('animationend', () => generatePlanButton.classList.remove('btn-pulse-hint'), { once: true });
+                }
             });
 
             function generateSubgoalsByTemplate(_, template, total, deadline) {
@@ -1917,7 +1929,7 @@
                 return subgoals;
             }
 
-            function resetGoalForm() { goalNameInput.value = ''; goalPrioritySelect.value = 'medium'; goalEstimateInput.value = '5'; const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1); goalDeadlineInput.valueAsDate = tomorrow; goalTemplateSelect.value = 'none'; }
+            function resetGoalForm(focus = false) { goalNameInput.value = ''; goalPrioritySelect.value = 'medium'; goalEstimateInput.value = '5'; const nextWeek = new Date(); nextWeek.setDate(nextWeek.getDate() + 7); goalDeadlineInput.valueAsDate = nextWeek; goalTemplateSelect.value = 'none'; if (focus) goalNameInput.focus(); }
 
             window.openAddSubgoalModal = function(goalId) { 
                 currentGoalId = goalId; 
@@ -1926,8 +1938,8 @@
                 document.getElementById('modal-add-subgoal-name').value = ''; 
                 document.getElementById('modal-add-subgoal-priority').value = 'medium'; 
                 document.getElementById('modal-add-subgoal-estimate').value = '2'; 
-                const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1); 
-                document.getElementById('modal-add-subgoal-deadline').valueAsDate = tomorrow; 
+                const nextWeek = new Date(); nextWeek.setDate(nextWeek.getDate() + 7); 
+                document.getElementById('modal-add-subgoal-deadline').valueAsDate = nextWeek; 
                 document.getElementById('add-subgoal-time-warning').classList.add('hidden'); 
                 openModal('add-subgoal-modal');
             };
