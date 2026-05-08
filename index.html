@@ -1336,7 +1336,7 @@
             let lastReminderDate = '';
             let lastGeneratedState = null;
 
-            const APP_VERSION = '1.8';
+            const APP_VERSION = '1.9';
             const TOUR_SEEN_KEY = 'tourSeen';
             const FEEDBACK_URL = 'https://v.wjx.cn/vm/YZWC6HZ.aspx';
 
@@ -2432,7 +2432,51 @@
                 }); 
             }
             
-            exportExcelButton.addEventListener('click', () => alert('Excel导出功能开发中'));
+            exportExcelButton.addEventListener('click', function() {
+                if (typeof XLSX === 'undefined') { alert('Excel导出库未加载，请检查网络后刷新页面。'); return; }
+                const table = document.getElementById('plan-table');
+                if (!table || !table.rows.length || table.rows.length <= 1) { alert('请先生成计划'); return; }
+
+                const data = [];
+                // 表头
+                const headers = [];
+                table.querySelectorAll('thead th').forEach(th => headers.push(th.textContent));
+                data.push(headers);
+
+                // 数据行
+                table.querySelectorAll('tbody tr').forEach(row => {
+                    const rowData = [];
+                    row.querySelectorAll('td').forEach((cell, idx) => {
+                        if (idx === 1) {
+                            const tasks = [];
+                            cell.querySelectorAll('li').forEach(li => {
+                                const label = li.querySelector('.task-label');
+                                const time = li.querySelector('span:last-child');
+                                const cb = li.querySelector('.task-checkbox');
+                                const completed = (cb && cb.checked) ? '✓ ' : '';
+                                const name = label ? label.textContent : '';
+                                const timeStr = time ? time.textContent : '';
+                                tasks.push(completed + name + ' ' + timeStr);
+                            });
+                            rowData.push(tasks.join('\n'));
+                        } else {
+                            rowData.push(cell.textContent.trim());
+                        }
+                    });
+                    data.push(rowData);
+                });
+
+                const ws = XLSX.utils.aoa_to_sheet(data);
+                ws['!cols'] = [{ wch: 12 }, { wch: 60 }, { wch: 12 }];
+
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "时间规划表");
+
+                const start = document.getElementById('start-date').value;
+                const end = document.getElementById('end-date').value;
+                const fileName = `时间规划_${start}_${end}.xlsx`.replace(/[/\\?%*:|"<>.]/g, '-');
+                XLSX.writeFile(wb, fileName);
+            });
             printPlanButton.addEventListener('click', () => window.print());
             
             resetAllButton.addEventListener('click', function() { 
