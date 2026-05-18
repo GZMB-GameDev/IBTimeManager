@@ -1450,6 +1450,11 @@
     <div id="settings-modal" class="modal-overlay hidden">
         <div class="modal-content">
             <div class="modal-header"><h3><i class="fas fa-sliders-h"></i> 计划生成设置</h3><button class="modal-close" onclick="window.closeSettingsModal()">&times;</button></div>
+            <!-- 保存按钮移到最上面 -->
+            <div style="display:flex; gap:12px; margin-bottom:20px; padding:16px; background:var(--primary-50); border-radius:12px; border:1px solid var(--primary-200);">
+                <button onclick="window.saveSettings()" class="btn-success" style="flex:1;"><i class="fas fa-save"></i> 保存设置</button>
+                <button onclick="window.resetSettings()" class="btn-info" style="flex:1;"><i class="fas fa-undo"></i> 重置</button>
+            </div>
             <div class="form-group"><label>每日最大学习时间 (小时)</label><input type="number" id="settings-daily-hours" min="1" max="24" step="0.5" value="6"></div>
             <div class="form-group"><label style="display: flex; align-items: center; gap: 12px;"><span class="switch"><input type="checkbox" id="settings-task-rollover" checked><span class="slider"></span></span><span>开启任务顺延</span></label></div>
             <div class="form-group"><label>最大计划天数</label><input type="number" id="settings-max-days" min="1" max="365" value="30"></div>
@@ -1498,8 +1503,7 @@
             <div class="form-group"><label>🎨 自定义颜色</label><div style="display:flex; align-items:center; gap:12px;"><input type="color" id="settings-custom-primary" value="#3b82f6" onchange="window.applyCustomColor(this.value)" style="width:50px; height:35px; border:none; cursor:pointer; border-radius:4px;"><span id="custom-color-preview" style="width:24px; height:24px; border-radius:4px; background:#3b82f6; display:inline-block; vertical-align:middle;"></span><span class="text-secondary" style="font-size:0.85rem;">主色</span><input type="color" id="settings-custom-accent" value="#14b8a6" onchange="window.applyCustomAccent(this.value)" style="width:50px; height:35px; border:none; cursor:pointer; border-radius:4px;"><span id="custom-accent-preview" style="width:24px; height:24px; border-radius:4px; background:#14b8a6; display:inline-block; vertical-align:middle;"></span><span class="text-secondary" style="font-size:0.85rem;">强调色</span></div></div>
             <hr><h3>✨ 动画设置</h3>
             <div class="form-group"><label style="display: flex; align-items: center; gap: 12px;"><span class="switch"><input type="checkbox" id="settings-enable-hover-anim" checked><span class="slider"></span></span><span>开启悬停动效</span></label></div>
-            <div class="modal-footer" style="display:flex; gap:12px; margin-top:24px;"><button onclick="window.saveSettings()" class="btn-success" style="flex:1;">保存设置</button><button onclick="window.closeSettingsModal()" class="btn-danger" style="flex:1;">取消</button></div>
-        </div>
+                    </div>
     </div>
 
     <div id="about-modal" class="modal-overlay hidden">
@@ -2323,9 +2327,66 @@
                 document.getElementById('settings-auto-daterange').checked = settings.autoDateRange;
                 document.getElementById('settings-background-effect').value = settings.backgroundEffect;
                 applyThemeAndAnimation();
+                // 保存初始设置快照用于检测修改
+                window._settingsSnapshot = {
+                    dailyHours: settings.dailyHours,
+                    taskRollover: settings.taskRollover,
+                    maxDays: settings.maxDays,
+                    density: settings.density,
+                    filterToday: settings.filterToday,
+                    advanceReminder: settings.advanceReminder,
+                    dailyReminderEnable: settings.dailyReminderEnable,
+                    dailyReminderTime: settings.dailyReminderTime,
+                    systemNotification: settings.systemNotification,
+                    showExpiredTasks: settings.showExpiredTasks,
+                    autoDateRange: settings.autoDateRange,
+                    backgroundEffect: settings.backgroundEffect,
+                    enableHoverAnim: settings.enableHoverAnim
+                };
                 openModal('settings-modal');
             };
-            window.closeSettingsModal = () => closeModal('settings-modal');
+            window.closeSettingsModal = function(force) {
+                // 检查是否有未保存的修改
+                if (!force) {
+                    const current = {
+                        dailyHours: parseFloat(document.getElementById('settings-daily-hours').value) || DEFAULT_SETTINGS.dailyHours,
+                        taskRollover: document.getElementById('settings-task-rollover').checked,
+                        maxDays: parseInt(document.getElementById('settings-max-days').value) || DEFAULT_SETTINGS.maxDays,
+                        density: document.getElementById('settings-density').value,
+                        filterToday: document.getElementById('settings-filter-today').checked,
+                        advanceReminder: parseInt(document.getElementById('settings-advance-reminder').value) || 0,
+                        dailyReminderEnable: document.getElementById('settings-daily-reminder-enable').checked,
+                        dailyReminderTime: document.getElementById('settings-daily-reminder-time').value,
+                        systemNotification: document.getElementById('settings-system-notification').checked,
+                        showExpiredTasks: document.getElementById('settings-show-expired').checked,
+                        autoDateRange: document.getElementById('settings-auto-daterange').checked,
+                        backgroundEffect: document.getElementById('settings-background-effect').value,
+                        enableHoverAnim: document.getElementById('settings-enable-hover-anim').checked
+                    };
+                    const snap = window._settingsSnapshot;
+                    const hasChanges = JSON.stringify(current) !== JSON.stringify(snap);
+                    if (hasChanges) {
+                        if (!confirm('您有未保存的修改，确定要关闭吗？')) return;
+                    }
+                }
+                closeModal('settings-modal');
+            };
+            window.resetSettings = function() {
+                // 重置为当前保存的值（忽略修改）
+                document.getElementById('settings-daily-hours').value = settings.dailyHours;
+                document.getElementById('settings-task-rollover').checked = settings.taskRollover;
+                document.getElementById('settings-max-days').value = settings.maxDays;
+                document.getElementById('settings-density').value = settings.density;
+                document.getElementById('settings-filter-today').checked = settings.filterToday;
+                document.getElementById('settings-advance-reminder').value = settings.advanceReminder;
+                document.getElementById('settings-daily-reminder-enable').checked = settings.dailyReminderEnable;
+                document.getElementById('settings-daily-reminder-time').value = settings.dailyReminderTime;
+                document.getElementById('settings-system-notification').checked = settings.systemNotification;
+                document.getElementById('settings-show-expired').checked = settings.showExpiredTasks;
+                document.getElementById('settings-auto-daterange').checked = settings.autoDateRange;
+                document.getElementById('settings-background-effect').value = settings.backgroundEffect;
+                document.getElementById('settings-enable-hover-anim').checked = settings.enableHoverAnim;
+            };
             window.saveSettings = function() {
                 settings.dailyHours = parseFloat(document.getElementById('settings-daily-hours').value) || DEFAULT_SETTINGS.dailyHours;
                 settings.taskRollover = document.getElementById('settings-task-rollover').checked;
@@ -2347,7 +2408,7 @@
                 if (!['sparse','normal','dense'].includes(settings.density)) settings.density = DEFAULT_SETTINGS.density;
                 if (!['none','gradient','glow','rainbow','sunset'].includes(settings.backgroundEffect)) settings.backgroundEffect = DEFAULT_SETTINGS.backgroundEffect;
                 if (typeof settings.enableHoverAnim !== 'boolean') settings.enableHoverAnim = DEFAULT_SETTINGS.enableHoverAnim;
-                applyThemeAndAnimation(); applyBackgroundEffect(); applyUIAnimation(); saveSettings(); closeModal('settings-modal'); alert('设置已保存！'); checkAllReminders();
+                applyThemeAndAnimation(); applyBackgroundEffect(); applyUIAnimation(); saveSettings(); window.closeSettingsModal(true); alert('设置已保存！'); checkAllReminders();
             };
 
             window.openAboutModal  = () => openModal('about-modal');
