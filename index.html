@@ -4,12 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>规划师 - PlannerPro</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" media="print" onload="this.media='all'">
-    <script defer src="https://cdn.jsdelivr.net/npm/xlsx-style@0.8.13/dist/xlsx.full.min.js"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script defer src="https://cdn.bootcdn.net/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script defer src="https://cdn.bootcdn.net/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
     <style>
         /* ========== 基础变量 ========== */
         :root {
@@ -82,6 +79,279 @@
         /* 自定义颜色 */
         [data-primary="custom"] { --primary-500: var(--custom-primary-500, #3b82f6); --primary-600: var(--custom-primary-600, #2563eb); --primary-700: var(--custom-primary-700, #1d4ed8); --primary-400: var(--custom-primary-400, #60a5fa); --primary-300: var(--custom-primary-300, #93c5fd); --primary-200: var(--custom-primary-200, #bfdbfe); --primary-100: var(--custom-primary-100, #dbeafe); --primary-50: var(--custom-primary-50, #eff6ff); --primary-800: var(--custom-primary-800, #1e3a8a); --primary-900: var(--custom-primary-900, #1e3a8a); --accent-500: var(--custom-accent-500, #14b8a6); --accent-600: var(--custom-accent-600, #0d9488); --accent-700: var(--custom-accent-700, #0f766e); }
 
+        /* ========== 整页文档查看器 ========== */
+        #docs-fullscreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: var(--bg-body-light, #f6f9fc);
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        #docs-fullscreen.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+        [data-theme="dark"] #docs-fullscreen {
+            background: var(--bg-body-dark, #1a2634);
+        }
+        .docs-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 24px;
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border-light);
+            flex-shrink: 0;
+        }
+        .docs-header h2 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 0;
+            font-size: 1.2rem;
+            color: var(--text-primary);
+        }
+        .docs-header h2 i {
+            color: var(--primary-500);
+        }
+        .docs-close-btn {
+            background: var(--ui-tier2-bg);
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+        .docs-close-btn:hover {
+            background: var(--ui-tier3-bg);
+            color: var(--text-primary);
+        }
+        .docs-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+        .docs-sidebar {
+            width: 200px;
+            flex-shrink: 0;
+            background: var(--bg-card);
+            border-right: 1px solid var(--border-light);
+            padding: 20px 0;
+            overflow-y: auto;
+        }
+        .docs-sidebar-title {
+            padding: 0 20px 12px;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-tertiary);
+            border-bottom: 1px solid var(--border-light);
+            margin-bottom: 12px;
+        }
+        .docs-nav-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+        }
+        .docs-nav-item:hover {
+            background: var(--ui-tier2-bg);
+            color: var(--primary-600);
+        }
+        .docs-nav-item.active {
+            background: var(--primary-50);
+            color: var(--primary-600);
+            border-left-color: var(--primary-500);
+            font-weight: 600;
+        }
+        .docs-nav-item.danger {
+            color: var(--danger-600);
+        }
+        .docs-main {
+            flex: 1;
+            overflow-y: auto;
+            padding: 32px 48px;
+        }
+        .docs-content {
+            max-width: 720px;
+            margin: 0 auto;
+            line-height: 1.8;
+            color: var(--text-primary);
+        }
+        .docs-content h2 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--primary-700);
+            border-left: 4px solid var(--primary-500);
+            padding-left: 14px;
+            margin: 40px 0 18px;
+        }
+        .docs-content h3 {
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 24px 0 12px;
+        }
+        .docs-content hr {
+            border: none;
+            border-top: 1px solid var(--border-light);
+            margin: 28px 0;
+        }
+        .docs-content p {
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+        .docs-content ul, .docs-content ol {
+            color: var(--text-secondary);
+            padding-left: 24px;
+            margin: 8px 0;
+        }
+        .docs-error-block {
+            margin-bottom: 20px;
+            padding: 18px;
+            background: var(--danger-50, #fef2f2);
+            border: 1px solid var(--danger-200, #fecaca);
+            border-radius: 12px;
+        }
+        .docs-error-block h3 {
+            margin-top: 0;
+            color: var(--danger-700);
+        }
+        .docs-details details {
+            background: var(--ui-tier2-bg);
+            border: 1px solid var(--ui-tier2-border);
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 12px;
+        }
+        .docs-details summary {
+            font-weight: 600;
+            cursor: pointer;
+            color: var(--text-primary);
+        }
+        .docs-details summary:hover {
+            color: var(--primary-600);
+        }
+        .docs-details p {
+            margin-top: 12px;
+            margin-bottom: 0;
+        }
+        .docs-intro-card {
+            display: flex;
+            gap: 14px;
+            margin-bottom: 16px;
+            padding: 14px;
+            background: var(--ui-tier2-bg);
+            border-radius: 10px;
+            border: 1px solid var(--ui-tier2-border);
+        }
+        .docs-step-num {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--primary-500);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+        .docs-step-num.accent { background: var(--accent-500); }
+        .docs-step-num.success { background: var(--success-500); }
+        .docs-step-num.warning { background: var(--warning-500); }
+        .docs-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+            background: var(--ui-tier2-bg);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--ui-tier2-border);
+            margin-bottom: 16px;
+        }
+        .docs-table th {
+            background: var(--ui-tier3-bg);
+            padding: 10px 14px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .docs-table td {
+            padding: 10px 14px;
+            border-top: 1px solid var(--border-light);
+            color: var(--text-secondary);
+        }
+        .docs-table td:first-child {
+            color: var(--primary-700);
+            font-weight: 500;
+        }
+        .docs-grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .docs-grid-item {
+            padding: 14px;
+            background: var(--primary-50);
+            border: 1px solid var(--primary-200);
+            border-radius: 10px;
+        }
+        .docs-grid-item strong {
+            color: var(--primary-700);
+        }
+        .docs-grid-item.accent {
+            background: var(--accent-50, #f0fdfa);
+            border-color: var(--accent-200, #99f6e4);
+        }
+        .docs-grid-item.accent strong {
+            color: var(--accent-700, #0f766e);
+        }
+        .docs-warning {
+            font-size: 0.88rem;
+            color: var(--warning-600);
+            background: var(--warning-50, #fffbeb);
+            border: 1px solid var(--warning-200, #fde68a);
+            border-radius: 8px;
+            padding: 10px 14px;
+            margin-top: 10px;
+        }
+        .docs-footer {
+            text-align: center;
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border-light);
+            font-size: 0.88rem;
+            color: var(--text-tertiary);
+        }
+        .docs-footer a {
+            color: var(--primary-500);
+        }
+
+        @media (max-width: 768px) {
+            .docs-sidebar { display: none; }
+            .docs-main { padding: 20px; }
+            .docs-grid-2 { grid-template-columns: 1fr; }
+        }
+
         /* ========== 动画 ========== */
         .animation-subtle .container { animation: fadeInScale 0.5s ease forwards; }
         .animation-bouncy .container { animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards; }
@@ -95,6 +365,57 @@
             50% { opacity: 1; transform: scale(1.05); }
             70% { transform: scale(0.9); }
             100% { opacity: 1; transform: scale(1); }
+        }
+
+        /* ========== 文档高亮提示 ========== */
+        .docs-highlight-hint {
+            position: fixed;
+            background: var(--primary-500);
+            color: white;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            z-index: 9999;
+            box-shadow: 0 4px 16px rgba(37, 99, 235, 0.4);
+            cursor: pointer;
+            animation: docsHintPop 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            pointer-events: auto;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+        .docs-highlight-hint::before {
+            content: '';
+            position: absolute;
+            top: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-bottom: 8px solid var(--primary-500);
+        }
+        .docs-highlight-hint:hover {
+            background: var(--primary-600);
+            transform: scale(1.02);
+        }
+        @keyframes docsHintPop {
+            0% { transform: scale(0.5); opacity: 0; }
+            60% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .docs-highlight-border {
+            position: fixed;
+            pointer-events: none;
+            z-index: 9997;
+            border: 3px solid var(--primary-500);
+            border-radius: 8px;
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.2), 0 0 20px rgba(37, 99, 235, 0.3);
+            animation: docsBorderPulse 1.5s ease-in-out infinite;
+        }
+        @keyframes docsBorderPulse {
+            0%, 100% { box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.2), 0 0 20px rgba(37, 99, 235, 0.3); }
+            50% { box-shadow: 0 0 0 6px rgba(37, 99, 235, 0.3), 0 0 30px rgba(37, 99, 235, 0.4); }
         }
         .modal-overlay:not(.hidden) { animation: modalFadeIn 0.2s ease; }
         @keyframes modalFadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -1018,7 +1339,7 @@
                 <div id="main-view" class="main-view active">
                     <div class="content-grid">
                         <div class="left-panel">
-                            <div class="card">
+                            <div class="card" id="goals-section">
                                 <div class="card-header"><i class="fas fa-bullseye"></i><h2>目标管理</h2></div>
                                 <div class="instructions" style="background:var(--primary-100); border-radius:20px; padding:12px; margin-bottom:20px;">
                                     <p><i class="fas fa-info-circle"></i> 添加大目标和子目标，设置优先级、时间、截止日期。</p>
@@ -1034,7 +1355,7 @@
                                 <button id="add-goal" class="btn-success" style="width:100%"><i class="fas fa-plus"></i> 添加大目标</button>
                                 <div class="goal-list" id="goal-list"></div>
                             </div>
-                            <div class="card" style="margin-top:20px;">
+                            <div class="card" id="plan-range-section" style="margin-top:20px;">
                                 <div class="card-header"><i class="fas fa-clock"></i><h2>计划设置</h2></div>
                                 <div class="form-row">
                                     <div class="form-group"><label>开始日期</label><input type="date" id="start-date"></div>
@@ -1098,7 +1419,7 @@
 
                 <!-- 归档视图 -->
                 <div id="archive-view" class="archive-view">
-                    <div class="card">
+                    <div class="card" id="archives-section">
                         <div class="card-header"><i class="fas fa-archive"></i><h2>历史计划归档</h2></div>
                         <div class="archive-toolbar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                             <div><button id="toggle-batch-mode" class="btn-info"><i class="fas fa-check-double"></i> 选择</button></div>
@@ -1323,197 +1644,206 @@
         </div>
     </div>
 
-    <!-- 使用文档 Modal -->
-    <div id="docs-modal" class="modal-overlay hidden">
-        <div class="modal-content" style="max-width:680px; max-height:82vh; overflow-y:auto; padding:0;">
-            <div class="modal-header" style="position:sticky; top:0; background:var(--bg-card); z-index:10; padding:20px 24px; border-bottom:1px solid var(--border-light);">
-                <h3 style="display:flex; align-items:center; gap:8px;"><i class="fas fa-book-open" style="color:var(--primary-500);"></i> 使用文档</h3>
-                <button class="modal-close" onclick="window.closeDocsModal()">&times;</button>
-            </div>
-            <!-- 文档目录 -->
-            <div id="docs-toc" style="padding:16px 24px 12px; border-bottom:1px solid var(--border-light); background:var(--ui-tier2-bg);">
-                <div style="font-size:0.8rem; color:var(--text-tertiary); margin-bottom:8px; text-transform:uppercase; letter-spacing:.05em;">目录</div>
-                <div style="display:flex; flex-wrap:wrap; gap:6px;">
-                    <a href="javascript:void(0)" onclick="window.docsScrollTo('doc-intro')" style="font-size:0.82rem; color:var(--primary-600); text-decoration:none; padding:3px 10px; background:var(--primary-50); border:1px solid var(--primary-200); border-radius:20px;">产品简介</a>
-                    <a href="javascript:void(0)" onclick="window.docsScrollTo('doc-quickstart')" style="font-size:0.82rem; color:var(--primary-600); text-decoration:none; padding:3px 10px; background:var(--primary-50); border:1px solid var(--primary-200); border-radius:20px;">快速上手</a>
-                    <a href="javascript:void(0)" onclick="window.docsScrollTo('doc-features')" style="font-size:0.82rem; color:var(--primary-600); text-decoration:none; padding:3px 10px; background:var(--primary-50); border:1px solid var(--primary-200); border-radius:20px;">功能详解</a>
-                    <a href="javascript:void(0)" onclick="window.docsScrollTo('doc-errors')" style="font-size:0.82rem; color:var(--danger-600); text-decoration:none; padding:3px 10px; background:var(--danger-50,#fef2f2); border:1px solid var(--danger-200,#fecaca); border-radius:20px;">报错解决</a>
-                    <a href="javascript:void(0)" onclick="window.docsScrollTo('doc-faq')" style="font-size:0.82rem; color:var(--primary-600); text-decoration:none; padding:3px 10px; background:var(--primary-50); border:1px solid var(--primary-200); border-radius:20px;">常见问题</a>
+    <!-- 整页文档查看器 -->
+    <div id="docs-fullscreen">
+        <div class="docs-header">
+            <h2><i class="fas fa-book-open"></i> 使用文档</h2>
+            <button class="docs-close-btn" onclick="window.closeDocsModal()">
+                <i class="fas fa-arrow-left"></i> 返回应用
+            </button>
+        </div>
+        <div class="docs-container">
+            <!-- 左侧目录导航 -->
+            <nav class="docs-sidebar">
+                <div class="docs-sidebar-title">目录</div>
+                <div class="docs-nav-item" onclick="window.docsScrollTo('doc-intro')">
+                    <i class="fas fa-info-circle"></i> 产品简介
                 </div>
-            </div>
+                <div class="docs-nav-item" onclick="window.docsScrollTo('doc-quickstart')">
+                    <i class="fas fa-rocket"></i> 快速上手
+                </div>
+                <div class="docs-nav-item" onclick="window.docsScrollTo('doc-features')">
+                    <i class="fas fa-star"></i> 功能详解
+                </div>
+                <div class="docs-nav-item danger" onclick="window.docsScrollTo('doc-errors')">
+                    <i class="fas fa-exclamation-triangle"></i> 报错解决
+                </div>
+                <div class="docs-nav-item" onclick="window.docsScrollTo('doc-faq')">
+                    <i class="fas fa-question-circle"></i> 常见问题
+                </div>
+            </nav>
             <!-- 文档正文 -->
-            <div id="docs-body" style="padding:24px; line-height:1.75; color:var(--text-primary);">
+            <main class="docs-main">
+                <div class="docs-content">
 
                 <!-- 一、产品简介 -->
                 <div id="doc-intro">
-                    <h2 style="font-size:1.25rem; font-weight:700; color:var(--primary-700); border-left:4px solid var(--primary-500); padding-left:12px; margin:0 0 14px;">一、产品简介</h2>
-                    <p style="color:var(--text-secondary); margin-bottom:10px;">IBTimeManager 是一款面向 IB 学生（及其他需要长期规划的学习者）的<strong>计划生成工具</strong>。</p>
-                    <p style="color:var(--text-secondary);">你只需要告诉它：你有哪些任务/目标、每个任务需要多少时间、截止日期是什么时候，它会自动帮你分配每天该做什么，生成一张可视化的学习计划表。</p>
-                    <hr style="margin:20px 0; border:none; border-top:1px solid var(--border-light);">
+                    <h2>一、产品简介</h2>
+                    <p>PlannerPro 是一款面向 IB 学生（及其他需要长期规划的学习者）的<strong>计划生成工具</strong>。</p>
+                    <p>你只需要告诉它：你有哪些任务/目标、每个任务需要多少时间、截止日期是什么时候，它会自动帮你分配每天该做什么，生成一张可视化的学习计划表。</p>
                 </div>
 
                 <!-- 二、快速上手 -->
                 <div id="doc-quickstart">
-                    <h2 style="font-size:1.25rem; font-weight:700; color:var(--primary-700); border-left:4px solid var(--primary-500); padding-left:12px; margin:0 0 14px;">二、快速上手</h2>
-                    <div style="counter-reset:qs-step;">
-                    <div style="display:flex; gap:14px; margin-bottom:14px; padding:14px; background:var(--ui-tier2-bg); border-radius:10px; border:1px solid var(--ui-tier2-border);">
-                        <div style="width:28px; height:28px; border-radius:50%; background:var(--primary-500); color:white; display:flex; align-items:center; justify-content:center; font-weight:700; flex-shrink:0;">1</div>
-                        <div><strong>添加大目标</strong><br><span style="color:var(--text-secondary); font-size:0.9rem;">在左侧「目标管理」填写目标名称、优先级、预计时间、截止日期，点击「＋ 添加大目标」。</span></div>
+                    <h2>二、快速上手</h2>
+                    <div class="docs-intro-card">
+                        <div class="docs-step-num">1</div>
+                        <div><strong>添加大目标</strong><br><span>在左侧「<a href="javascript:void(0)" onclick="window.docsScrollToSection('goals-section')"><i class="fas fa-bullseye"></i> 目标管理</a>」填写目标名称、优先级、预计时间、截止日期，点击「＋ 添加大目标」。</span></div>
                     </div>
-                    <div style="display:flex; gap:14px; margin-bottom:14px; padding:14px; background:var(--ui-tier2-bg); border-radius:10px; border:1px solid var(--ui-tier2-border);">
-                        <div style="width:28px; height:28px; border-radius:50%; background:var(--accent-500); color:white; display:flex; align-items:center; justify-content:center; font-weight:700; flex-shrink:0;">2</div>
-                        <div><strong>拆分子目标（可选）</strong><br><span style="color:var(--text-secondary); font-size:0.9rem;">点击大目标旁边的 <i class="fas fa-plus-circle"></i> 按钮，为该目标添加子目标，每个子目标独立设置时间和截止日期。</span></div>
+                    <div class="docs-intro-card">
+                        <div class="docs-step-num accent">2</div>
+                        <div><strong>拆分子目标（可选）</strong><br><span>点击大目标旁边的 <i class="fas fa-plus-circle"></i> 按钮，为该目标添加子目标，每个子目标独立设置时间和截止日期。</span></div>
                     </div>
-                    <div style="display:flex; gap:14px; margin-bottom:14px; padding:14px; background:var(--ui-tier2-bg); border-radius:10px; border:1px solid var(--ui-tier2-border);">
-                        <div style="width:28px; height:28px; border-radius:50%; background:var(--success-500); color:white; display:flex; align-items:center; justify-content:center; font-weight:700; flex-shrink:0;">3</div>
-                        <div><strong>设置日期范围</strong><br><span style="color:var(--text-secondary); font-size:0.9rem;">在「计划日期范围」区域设置开始和结束日期。默认开启「自动调整」，会根据任务截止日期自动设置。</span></div>
+                    <div class="docs-intro-card">
+                        <div class="docs-step-num success">3</div>
+                        <div><strong>设置日期范围</strong><br><span>在「<a href="javascript:void(0)" onclick="window.docsScrollToSection('plan-range-section')"><i class="fas fa-calendar-alt"></i> 计划日期范围</a>」设置开始和结束日期。默认开启「自动调整」，会根据任务截止日期自动设置。</span></div>
                     </div>
-                    <div style="display:flex; gap:14px; margin-bottom:14px; padding:14px; background:var(--ui-tier2-bg); border-radius:10px; border:1px solid var(--ui-tier2-border);">
-                        <div style="width:28px; height:28px; border-radius:50%; background:var(--warning-500); color:white; display:flex; align-items:center; justify-content:center; font-weight:700; flex-shrink:0;">4</div>
-                        <div><strong>生成计划</strong><br><span style="color:var(--text-secondary); font-size:0.9rem;">点击「✨ 生成计划」，右侧显示按天排列的任务表，以及统计信息。</span></div>
+                    <div class="docs-intro-card">
+                        <div class="docs-step-num warning">4</div>
+                        <div><strong>生成计划</strong><br><span>点击「✨ 生成计划」，右侧显示按天排列的任务表，以及统计信息。</span></div>
                     </div>
-                    <div style="display:flex; gap:14px; padding:14px; background:var(--ui-tier2-bg); border-radius:10px; border:1px solid var(--ui-tier2-border);">
-                        <div style="width:28px; height:28px; border-radius:50%; background:var(--primary-400); color:white; display:flex; align-items:center; justify-content:center; font-weight:700; flex-shrink:0;">5</div>
-                        <div><strong>导出/打印</strong><br><span style="color:var(--text-secondary); font-size:0.9rem;">点击「导出 Excel」保存为电子表格，或点击「打印」直接打印。</span></div>
+                    <div class="docs-intro-card">
+                        <div class="docs-step-num" style="background:var(--primary-400);">5</div>
+                        <div><strong>导出/打印</strong><br><span>点击「导出 Excel」保存为电子表格，或点击「打印」直接打印。</span></div>
                     </div>
-                    </div>
-                    <hr style="margin:20px 0; border:none; border-top:1px solid var(--border-light);">
                 </div>
 
                 <!-- 三、功能详解 -->
                 <div id="doc-features">
-                    <h2 style="font-size:1.25rem; font-weight:700; color:var(--primary-700); border-left:4px solid var(--primary-500); padding-left:12px; margin:0 0 14px;">三、功能详解</h2>
+                    <h2>三、功能详解</h2>
 
-                    <h3 style="font-size:1rem; font-weight:600; color:var(--text-primary); margin:0 0 10px;">3.1 目标管理</h3>
-                    <div style="background:var(--ui-tier2-bg); border-radius:8px; overflow:hidden; border:1px solid var(--ui-tier2-border); margin-bottom:16px;">
-                        <table style="width:100%; border-collapse:collapse; font-size:0.88rem;">
-                            <thead><tr style="background:var(--ui-tier3-bg);"><th style="padding:8px 12px; text-align:left;">字段</th><th style="padding:8px 12px; text-align:left;">说明</th></tr></thead>
-                            <tbody>
-                                <tr style="border-top:1px solid var(--border-light);"><td style="padding:8px 12px; color:var(--primary-700); font-weight:500;">目标名称</td><td style="padding:8px 12px; color:var(--text-secondary);">任意文字，例如「英语 EE」</td></tr>
-                                <tr style="border-top:1px solid var(--border-light);"><td style="padding:8px 12px; color:var(--primary-700); font-weight:500;">优先级</td><td style="padding:8px 12px; color:var(--text-secondary);">高（最先安排）/ 中 / 低</td></tr>
-                                <tr style="border-top:1px solid var(--border-light);"><td style="padding:8px 12px; color:var(--primary-700); font-weight:500;">预计时间</td><td style="padding:8px 12px; color:var(--text-secondary);">完成所需总小时数</td></tr>
-                                <tr style="border-top:1px solid var(--border-light);"><td style="padding:8px 12px; color:var(--primary-700); font-weight:500;">截止日期（DDL）</td><td style="padding:8px 12px; color:var(--text-secondary);">必须完成的最晚日期</td></tr>
-                                <tr style="border-top:1px solid var(--border-light);"><td style="padding:8px 12px; color:var(--primary-700); font-weight:500;">预设模板</td><td style="padding:8px 12px; color:var(--text-secondary);">自动填充多个子目标（可选）</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <p style="color:var(--text-secondary); font-size:0.88rem; margin-bottom:16px;"><strong>预设模板：</strong>📚 考试复习（内容复习→习题练习→模拟测试→重点回顾）；🛠️ 项目化学习（调研→初步规划→详细计划→成果准备）。</p>
+                    <h3>3.1 目标管理</h3>
+                    <p><a href="javascript:void(0)" onclick="window.docsScrollToSection('goals-section')"><i class="fas fa-plus-circle"></i> 前往添加目标</a></p>
+                    <table class="docs-table">
+                        <thead><tr><th>字段</th><th>说明</th></tr></thead>
+                        <tbody>
+                            <tr><td>目标名称</td><td>任意文字，例如「英语 EE」</td></tr>
+                            <tr><td>优先级</td><td>高（最先安排）/ 中 / 低</td></tr>
+                            <tr><td>预计时间</td><td>完成所需总小时数</td></tr>
+                            <tr><td>截止日期（DDL）</td><td>必须完成的最晚日期</td></tr>
+                            <tr><td>预设模板</td><td>自动填充多个子目标（可选）</td></tr>
+                        </tbody>
+                    </table>
+                    <p><strong>预设模板：</strong>📚 考试复习（内容复习→习题练习→模拟测试→重点回顾）；🛠️ 项目化学习（调研→初步规划→详细计划→成果准备）。</p>
 
-                    <h3 style="font-size:1rem; font-weight:600; color:var(--text-primary); margin:0 0 10px;">3.2 算法说明</h3>
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px;">
-                        <div style="padding:12px; background:var(--primary-50); border:1px solid var(--primary-200); border-radius:8px; font-size:0.88rem;"><strong style="color:var(--primary-700);">普通/密集模式</strong><br><span style="color:var(--text-secondary);">从计划开始日期，按优先级高→低、截止日期近→远，将任务塞满每天时间槽。</span></div>
-                        <div style="padding:12px; background:var(--accent-50,#f0fdfa); border:1px solid var(--accent-200,#99f6e4); border-radius:8px; font-size:0.88rem;"><strong style="color:var(--accent-700);">离散模式</strong><br><span style="color:var(--text-secondary);">从截止日期往前倒推，任务集中在截止日期前完成，减少早期压力。</span></div>
-                    </div>
-
-                    <h3 style="font-size:1rem; font-weight:600; color:var(--text-primary); margin:0 0 10px;">3.3 设置说明</h3>
-                    <div style="background:var(--ui-tier2-bg); border-radius:8px; overflow:hidden; border:1px solid var(--ui-tier2-border); margin-bottom:16px;">
-                        <table style="width:100%; border-collapse:collapse; font-size:0.88rem;">
-                            <thead><tr style="background:var(--ui-tier3-bg);"><th style="padding:8px 12px; text-align:left;">设置项</th><th style="padding:8px 12px; text-align:left;">说明</th><th style="padding:8px 12px; text-align:left;">默认值</th></tr></thead>
-                            <tbody>
-                                <tr style="border-top:1px solid var(--border-light);"><td style="padding:8px 12px; font-weight:500;">每日最大学习时间</td><td style="padding:8px 12px; color:var(--text-secondary);">每天最多安排几小时任务</td><td style="padding:8px 12px; color:var(--text-secondary);">6 小时</td></tr>
-                                <tr style="border-top:1px solid var(--border-light);"><td style="padding:8px 12px; font-weight:500;">任务顺延</td><td style="padding:8px 12px; color:var(--text-secondary);">未完成任务是否顺延到下一天</td><td style="padding:8px 12px; color:var(--text-secondary);">开启</td></tr>
-                                <tr style="border-top:1px solid var(--border-light);"><td style="padding:8px 12px; font-weight:500;">最大计划天数</td><td style="padding:8px 12px; color:var(--text-secondary);">计划表最多显示的天数</td><td style="padding:8px 12px; color:var(--text-secondary);">30 天</td></tr>
-                                <tr style="border-top:1px solid var(--border-light);"><td style="padding:8px 12px; font-weight:500;">任务分布密度</td><td style="padding:8px 12px; color:var(--text-secondary);">离散(60%) / 一般(80%) / 密集(100%)</td><td style="padding:8px 12px; color:var(--text-secondary);">一般</td></tr>
-                                <tr style="border-top:1px solid var(--border-light);"><td style="padding:8px 12px; font-weight:500;">自动调整日期范围</td><td style="padding:8px 12px; color:var(--text-secondary);">根据任务截止日期自动设置结束日期</td><td style="padding:8px 12px; color:var(--text-secondary);">开启</td></tr>
-                            </tbody>
-                        </table>
+                    <h3>3.2 算法说明</h3>
+                    <div class="docs-grid-2">
+                        <div class="docs-grid-item"><strong>普通/密集模式</strong><br><span>从计划开始日期，按优先级高→低、截止日期近→远，将任务塞满每天时间槽。</span></div>
+                        <div class="docs-grid-item accent"><strong>离散模式</strong><br><span>从截止日期往前倒推，任务集中在截止日期前完成，减少早期压力。</span></div>
                     </div>
 
-                    <h3 style="font-size:1rem; font-weight:600; color:var(--text-primary); margin:0 0 10px;">3.4 归档</h3>
-                    <p style="color:var(--text-secondary); font-size:0.88rem; margin-bottom:16px;">每次成功生成计划，系统自动保存到归档。点击左侧「归档」可查看历史计划、恢复目标到编辑区、批量删除。</p>
+                    <h3>3.3 设置说明</h3>
+                    <p>点击 <a href="javascript:void(0)" onclick="window.docsGoto('settings')"><i class="fas fa-cog"></i> 打开设置</a> 可以调整以下选项：</p>
+                    <table class="docs-table">
+                        <thead><tr><th>设置项</th><th>说明</th><th>默认值</th></tr></thead>
+                        <tbody>
+                            <tr><td>每日最大学习时间</td><td>每天最多安排几小时任务</td><td>6 小时</td></tr>
+                            <tr><td>任务顺延</td><td>未完成任务是否顺延到下一天</td><td>开启</td></tr>
+                            <tr><td>最大计划天数</td><td>计划表最多显示的天数</td><td>30 天</td></tr>
+                            <tr><td>任务分布密度</td><td>离散(60%) / 一般(80%) / 密集(100%)</td><td>一般</td></tr>
+                            <tr><td>自动调整日期范围</td><td>根据任务截止日期自动设置结束日期</td><td>开启</td></tr>
+                        </tbody>
+                    </table>
 
-                    <h3 style="font-size:1rem; font-weight:600; color:var(--text-primary); margin:0 0 10px;">3.5 导入/导出</h3>
-                    <p style="color:var(--text-secondary); font-size:0.88rem; margin-bottom:4px;"><strong>导出：</strong>点击「导出」将目标和设置压缩为代码，可复制保存或分享。</p>
-                    <p style="color:var(--text-secondary); font-size:0.88rem; margin-bottom:4px;"><strong>导入：</strong>点击「导入」粘贴代码即可恢复。</p>
-                    <p style="font-size:0.85rem; color:var(--warning-600); background:var(--warning-50,#fffbeb); border:1px solid var(--warning-200,#fde68a); border-radius:6px; padding:8px 12px; margin-top:8px;">⚠️ 导入会<strong>覆盖</strong>当前的目标数据，请确认已备份。</p>
-                    <hr style="margin:20px 0; border:none; border-top:1px solid var(--border-light);">
+                    <h3>3.4 归档</h3>
+                    <p>每次成功生成计划，系统自动保存到归档。点击左侧「<a href="javascript:void(0)" onclick="window.docsScrollToSection('archives-section')"><i class="fas fa-archive"></i> 归档</a>」可查看历史计划、恢复目标到编辑区、批量删除。</p>
+
+                    <h3>3.5 导入/导出</h3>
+                    <p><strong>导出：</strong><a href="javascript:void(0)" onclick="window.docsGoto('export')"><i class="fas fa-download"></i> 打开导出</a> 将目标和设置压缩为代码，可复制保存或分享。</p>
+                    <p><strong>导入：</strong><a href="javascript:void(0)" onclick="window.docsGoto('import')"><i class="fas fa-upload"></i> 打开导入</a> 粘贴代码即可恢复。</p>
+                    <div class="docs-warning">⚠️ 导入会<strong>覆盖</strong>当前的目标数据，请确认已备份。</div>
                 </div>
 
                 <!-- 四、报错解决手册 -->
                 <div id="doc-errors">
-                    <h2 style="font-size:1.25rem; font-weight:700; color:var(--danger-700); border-left:4px solid var(--danger-500); padding-left:12px; margin:0 0 14px;">四、报错解决手册</h2>
+                    <h2>四、报错解决手册</h2>
 
-                    <div id="doc-err-date" style="margin-bottom:18px; padding:16px; background:var(--danger-50,#fef2f2); border:1px solid var(--danger-200,#fecaca); border-radius:10px;">
-                        <div style="font-weight:700; color:var(--danger-700); margin-bottom:8px;">❌ 「日期范围无效」</div>
-                        <p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:8px;"><strong>原因：</strong>开始日期 ≥ 结束日期，或日期格式错误。</p>
-                        <p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:4px;"><strong>解决方法：</strong></p>
-                        <ul style="color:var(--text-secondary); font-size:0.9rem; padding-left:20px; margin:0;">
+                    <div id="doc-err-date" class="docs-error-block">
+                        <h3>❌ 「日期范围无效」</h3>
+                        <p><strong>原因：</strong>开始日期 ≥ 结束日期，或日期格式错误。</p>
+                        <p><strong>解决方法：</strong></p>
+                        <ul>
                             <li>检查「计划开始日期」是否早于「计划结束日期」</li>
                             <li>如开启了「自动调整日期范围」，检查所有任务的截止日期是否晚于今天</li>
                         </ul>
+                        <p><a href="javascript:void(0)" onclick="window.docsScrollToSection('plan-range-section')"><i class="fas fa-calendar-alt"></i> 前往调整日期范围</a></p>
                     </div>
 
-                    <div id="doc-err-maxdays" style="margin-bottom:18px; padding:16px; background:var(--danger-50,#fef2f2); border:1px solid var(--danger-200,#fecaca); border-radius:10px;">
-                        <div style="font-weight:700; color:var(--danger-700); margin-bottom:8px;">❌ 「计划天数超过了最大设置天数」</div>
-                        <p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:8px;"><strong>原因：</strong>你的日期范围超过了设置中允许的最大天数。</p>
-                        <p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:4px;"><strong>解决方法：</strong></p>
-                        <ul style="color:var(--text-secondary); font-size:0.9rem; padding-left:20px; margin:0;">
-                            <li>打开<strong>设置</strong> → 将「最大计划天数」调大（最多可设 365 天）</li>
+                    <div id="doc-err-maxdays" class="docs-error-block">
+                        <h3>❌ 「计划天数超过了最大设置天数」</h3>
+                        <p><strong>原因：</strong>你的日期范围超过了设置中允许的最大天数。</p>
+                        <p><strong>解决方法：</strong></p>
+                        <ul>
+                            <li><a href="javascript:void(0)" onclick="window.docsGoto('settings')"><i class="fas fa-cog"></i> 打开设置</a> → 将「最大计划天数」调大（最多可设 365 天）</li>
                             <li>或者缩短你的计划日期范围</li>
                         </ul>
                     </div>
 
-                    <div id="doc-err-notask" style="margin-bottom:18px; padding:16px; background:var(--danger-50,#fef2f2); border:1px solid var(--danger-200,#fecaca); border-radius:10px;">
-                        <div style="font-weight:700; color:var(--danger-700); margin-bottom:8px;">❌ 「没有需要规划的任务」</div>
-                        <p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:8px;"><strong>原因：</strong>还没有添加任何目标，或所有目标截止日期已过期且开启了「只规划今天及以后的任务」。</p>
-                        <p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:4px;"><strong>解决方法：</strong></p>
-                        <ul style="color:var(--text-secondary); font-size:0.9rem; padding-left:20px; margin:0;">
-                            <li>检查目标列表是否为空，如为空请先添加目标</li>
-                            <li>打开<strong>设置</strong> → 关闭「只规划今天及以后的任务」</li>
+                    <div id="doc-err-notask" class="docs-error-block">
+                        <h3>❌ 「没有需要规划的任务」</h3>
+                        <p><strong>原因：</strong>还没有添加任何目标，或所有目标截止日期已过期且开启了「只规划今天及以后的任务」。</p>
+                        <p><strong>解决方法：</strong></p>
+                        <ul>
+                            <li><a href="javascript:void(0)" onclick="window.docsScrollToSection('goals-section')"><i class="fas fa-bullseye"></i> 前往添加目标</a></li>
+                            <li><a href="javascript:void(0)" onclick="window.docsGoto('settings')"><i class="fas fa-cog"></i> 打开设置</i></a> → 关闭「只规划今天及以后的任务」</li>
                             <li>更新截止日期为未来的日期</li>
                         </ul>
                     </div>
 
-                    <div id="doc-err-timeout" style="margin-bottom:18px; padding:16px; background:var(--danger-50,#fef2f2); border:1px solid var(--danger-200,#fecaca); border-radius:10px;">
-                        <div style="font-weight:700; color:var(--danger-700); margin-bottom:8px;">❌ 「任务"XXX"无法在截止日期前完成」</div>
-                        <p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:8px;"><strong>原因：</strong>截止日期前每天的可用时间不够完成该任务（预计时间太长/截止日期太近/密度为离散）。</p>
-                        <p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:4px;"><strong>解决方法（按简易程度）：</strong></p>
-                        <ol style="color:var(--text-secondary); font-size:0.9rem; padding-left:20px; margin:0;">
-                            <li>调高每日学习时间：设置 → 每日最大学习时间</li>
-                            <li>调整分布密度：设置 → 任务分布密度 → 改为「一般」或「密集」</li>
+                    <div id="doc-err-timeout" class="docs-error-block">
+                        <h3>❌ 「任务"XXX"无法在截止日期前完成」</h3>
+                        <p><strong>原因：</strong>截止日期前每天的可用时间不够完成该任务（预计时间太长/截止日期太近/密度为离散）。</p>
+                        <p><strong>解决方法（按简易程度）：</strong></p>
+                        <ol>
+                            <li><a href="javascript:void(0)" onclick="window.docsGoto('settings')"><i class="fas fa-cog"></i> 打开设置</i></a> → 调高「每日最大学习时间」</li>
+                            <li><a href="javascript:void(0)" onclick="window.docsGoto('settings')"><i class="fas fa-cog"></i> 打开设置</i></a> → 调整「任务分布密度」为「一般」或「密集」</li>
                             <li>延长截止日期：点击目标旁的编辑按钮，推迟该任务 DDL</li>
                             <li>拆分任务：将大任务拆成多个子目标，分配不同截止日期</li>
                             <li>减少预计时间：如原估算偏高，可适当调低</li>
                         </ol>
                     </div>
-                    <hr style="margin:20px 0; border:none; border-top:1px solid var(--border-light);">
                 </div>
 
                 <!-- 五、常见问题 -->
                 <div id="doc-faq">
-                    <h2 style="font-size:1.25rem; font-weight:700; color:var(--primary-700); border-left:4px solid var(--primary-500); padding-left:12px; margin:0 0 14px;">五、常见问题 FAQ</h2>
-                    <div style="display:flex; flex-direction:column; gap:12px;">
-                        <details style="background:var(--ui-tier2-bg); border:1px solid var(--ui-tier2-border); border-radius:8px; padding:12px 16px;">
-                            <summary style="font-weight:600; cursor:pointer; color:var(--text-primary);">为什么有些天没有任务，有些天任务很多？</summary>
-                            <p style="margin-top:10px; color:var(--text-secondary); font-size:0.9rem;">取决于「任务分布密度」。离散模式下任务集中在截止日期前；希望均匀分布请切换为「一般」模式。</p>
+                    <h2>五、常见问题 FAQ</h2>
+                    <div class="docs-details">
+                        <details>
+                            <summary>为什么有些天没有任务，有些天任务很多？</summary>
+                            <p>取决于「任务分布密度」。<a href="javascript:void(0)" onclick="window.docsGoto('settings')"><i class="fas fa-cog"></i> 打开设置</a> → 离散模式下任务集中在截止日期前；希望均匀分布请切换为「一般」模式。</p>
                         </details>
-                        <details style="background:var(--ui-tier2-bg); border:1px solid var(--ui-tier2-border); border-radius:8px; padding:12px 16px;">
-                            <summary style="font-weight:600; cursor:pointer; color:var(--text-primary);">修改目标后需要重新生成吗？</summary>
-                            <p style="margin-top:10px; color:var(--text-secondary); font-size:0.9rem;">是的，修改后点击「重新编辑」再点「生成计划」即可。</p>
+                        <details>
+                            <summary>修改目标后需要重新生成吗？</summary>
+                            <p>是的，修改后点击「重新编辑」再点「生成计划」即可。</p>
                         </details>
-                        <details style="background:var(--ui-tier2-bg); border:1px solid var(--ui-tier2-border); border-radius:8px; padding:12px 16px;">
-                            <summary style="font-weight:600; cursor:pointer; color:var(--text-primary);">数据会丢失吗？</summary>
-                            <p style="margin-top:10px; color:var(--text-secondary); font-size:0.9rem;">数据保存在浏览器 LocalStorage 中，清除浏览器缓存或更换浏览器会导致丢失。建议定期使用「导出」功能备份。</p>
+                        <details>
+                            <summary>数据会丢失吗？</summary>
+                            <p>数据保存在浏览器 LocalStorage 中，清除浏览器缓存或更换浏览器会导致丢失。建议定期使用 <a href="javascript:void(0)" onclick="window.docsGoto('export')"><i class="fas fa-download"></i> 导出</a> 功能备份。</p>
                         </details>
-                        <details style="background:var(--ui-tier2-bg); border:1px solid var(--ui-tier2-border); border-radius:8px; padding:12px 16px;">
-                            <summary style="font-weight:600; cursor:pointer; color:var(--text-primary);">可以在手机上使用吗？</summary>
-                            <p style="margin-top:10px; color:var(--text-secondary); font-size:0.9rem;">支持手机浏览器访问，界面已做移动端适配。建议使用 Chrome 以获得最佳体验（含通知功能）。</p>
+                        <details>
+                            <summary>可以在手机上使用吗？</summary>
+                            <p>支持手机浏览器访问，界面已做移动端适配。建议使用 Chrome 以获得最佳体验（含通知功能）。</p>
                         </details>
-                        <details style="background:var(--ui-tier2-bg); border:1px solid var(--ui-tier2-border); border-radius:8px; padding:12px 16px;">
-                            <summary style="font-weight:600; cursor:pointer; color:var(--text-primary);">导入时提示「数据格式错误」怎么办？</summary>
-                            <p style="margin-top:10px; color:var(--text-secondary); font-size:0.9rem;">代码可能损坏或不完整，请确认粘贴的是完整导出代码，不要有多余空格或字符。</p>
+                        <details>
+                            <summary>导入时提示「数据格式错误」怎么办？</summary>
+                            <p>代码可能损坏或不完整，请确认粘贴的是完整导出代码，不要有多余空格或字符。</p>
                         </details>
-                        <details style="background:var(--ui-tier2-bg); border:1px solid var(--ui-tier2-border); border-radius:8px; padding:12px 16px;">
-                            <summary style="font-weight:600; cursor:pointer; color:var(--text-primary);">通知功能没有弹出来？</summary>
-                            <p style="margin-top:10px; color:var(--text-secondary); font-size:0.9rem;">确认使用 Chrome（iOS Safari 不支持）→ 设置 → 点击「请求通知权限」→ 在弹出框点击「允许」。</p>
+                        <details>
+                            <summary>通知功能没有弹出来？</summary>
+                            <p><a href="javascript:void(0)" onclick="window.docsGoto('settings')"><i class="fas fa-cog"></i> 打开设置</a> → 点击「请求通知权限」→ 在弹出框点击「允许」。</p>
                         </details>
                     </div>
-                    <p style="text-align:center; margin-top:20px; font-size:0.85rem; color:var(--text-tertiary);">如有其他问题，欢迎通过 <a href="https://github.com/GZMB-GameDev/IBTimeManager/issues" target="_blank" style="color:var(--primary-500);">GitHub Issues</a> 提交反馈。</p>
+                    <div class="docs-footer">
+                        如有其他问题，欢迎通过 <a href="https://github.com/GZMB-GameDev/IBTimeManager/issues" target="_blank">GitHub Issues</a> 提交反馈。
+                    </div>
                 </div>
 
-            </div><!-- /docs-body -->
+            </div>
+            </main>
         </div>
     </div>
+
+    <script>
         (function() {
             // ========== 通用工具函数 ==========
             /** 打开一个 modal-overlay 弹窗 */
@@ -1539,7 +1869,7 @@
             let lastReminderDate = '';
             let lastGeneratedState = null;
 
-            const APP_VERSION = '1.9';
+            const APP_VERSION = '1.10';
             const TOUR_SEEN_KEY = 'tourSeen';
             const FEEDBACK_URL = 'https://v.wjx.cn/vm/YZWC6HZ.aspx';
 
@@ -2094,33 +2424,57 @@
             });
             window.openFeedback    = () => window.open(FEEDBACK_URL, '_blank');
 
-            // ========== 使用文档 ==========
+            // ========== 使用文档（整页模式） ==========
             window.openDocsModal = function(anchorId) {
-                openModal('docs-modal');
+                const el = document.getElementById('docs-fullscreen');
+                if (el) el.classList.add('visible');
                 if (anchorId) {
-                    // 等 modal 渲染完再滚动
                     setTimeout(() => {
-                        const target = document.getElementById(anchorId);
-                        const body = document.getElementById('docs-body');
-                        if (target && body) {
-                            // 找到 docs-modal 的滚动容器
-                            const scrollEl = document.getElementById('docs-modal').querySelector('.modal-content');
-                            if (scrollEl) {
-                                const offset = target.offsetTop - scrollEl.offsetTop - 80;
-                                scrollEl.scrollTo({ top: offset, behavior: 'smooth' });
-                            }
-                        }
-                    }, 120);
+                        window.docsScrollTo(anchorId);
+                        // 高亮对应导航项
+                        document.querySelectorAll('.docs-nav-item').forEach(item => item.classList.remove('active'));
+                        const targetNav = document.querySelector(`.docs-nav-item[onclick*="${anchorId}"]`);
+                        if (targetNav) targetNav.classList.add('active');
+                    }, 100);
                 }
             };
-            window.closeDocsModal = () => closeModal('docs-modal');
+            window.closeDocsModal = function() {
+                const el = document.getElementById('docs-fullscreen');
+                if (el) el.classList.remove('visible');
+            };
             window.docsScrollTo = function(anchorId) {
                 const target = document.getElementById(anchorId);
-                const scrollEl = document.getElementById('docs-modal').querySelector('.modal-content');
-                if (target && scrollEl) {
-                    const offset = target.offsetTop - 80;
-                    scrollEl.scrollTo({ top: offset, behavior: 'smooth' });
+                const main = document.querySelector('.docs-main');
+                if (target && main) {
+                    const offset = target.offsetTop - main.offsetTop - 40;
+                    main.scrollTo({ top: Math.max(0, offset), behavior: 'smooth' });
                 }
+            };
+            // 文档中跳转到指定弹窗/页面
+            window.docsGoto = function(target) {
+                window.closeDocsModal();
+                setTimeout(() => {
+                    const modalMap = {
+                        'settings': { id: 'settings-modal', label: '设置面板' },
+                        'import': { id: 'import-modal', label: '导入弹窗' },
+                        'export': { id: 'export-modal', label: '导出弹窗' }
+                    };
+                    const info = modalMap[target];
+                    if (info) {
+                        openModal(info.id);
+                        // 弹窗不需要高亮，直接打开即可
+                    }
+                }, 200);
+            };
+            // 文档中滚动到指定区域并高亮
+            window.docsScrollToSection = function(sectionId) {
+                window.closeDocsModal();
+                setTimeout(() => {
+                    const el = document.getElementById(sectionId);
+                    if (el) {
+                        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }, 200);
             };
 
             window.showImportModal = () => openModal('import-modal');
