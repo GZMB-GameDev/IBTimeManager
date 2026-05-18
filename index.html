@@ -6,10 +6,10 @@
     <title>规划师 - PlannerPro</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/xlsx-style@0.8.13/dist/xlsx.full.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" media="print" onload="this.media='all'">
+    <script defer src="https://cdn.jsdelivr.net/npm/xlsx-style@0.8.13/dist/xlsx.full.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js"></script>
     <style>
         /* ========== 基础变量 ========== */
         :root {
@@ -1008,6 +1008,9 @@
                 <div class="sidebar-item" onclick="window.openTourModal()">
                     <i class="fas fa-question-circle"></i> <span>新手引导</span>
                 </div>
+                <div class="sidebar-item" onclick="window.openDocsModal()">
+                    <i class="fas fa-book-open"></i> <span>使用文档</span>
+                </div>
             </div>
 
             <div class="main-content">
@@ -1242,6 +1245,11 @@
                         <div style="font-size: 3rem; margin-bottom: 16px;"><i class="fas fa-archive" style="color: var(--warning-500);"></i></div>
                         <h4 style="margin-bottom: 12px; color: var(--warning-700);">归档与设置</h4>
                         <p style="color: var(--text-secondary); line-height: 1.6;">完成的计划会自动保存到"归档"。点击右上角"设置"可以自定义主题颜色、背景效果等！</p>
+                        <div style="margin-top: 18px; padding: 12px 16px; background: var(--primary-50); border: 1px solid var(--primary-200); border-radius: 10px;">
+                            <a href="javascript:void(0)" onclick="window.closeTourModal(); window.openDocsModal();" style="color: var(--primary-600); font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                                <i class="fas fa-book-open"></i> 点击跳转至使用文档以了解更详细的信息 →
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1306,11 +1314,206 @@
         <div class="modal-content">
             <div class="modal-header"><h3>❌ 计划生成失败</h3><button class="modal-close" onclick="window.closeErrorModal()">&times;</button></div>
             <p id="error-message-text" style="white-space: pre-line;"></p>
+            <div id="error-doc-link" style="display:none; margin-top:14px; padding:10px 14px; background:var(--primary-50); border:1px solid var(--primary-200); border-radius:8px;">
+                <a id="error-doc-anchor" href="javascript:void(0)" style="color:var(--primary-600); font-weight:600; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+                    <i class="fas fa-book-open"></i> 查看文档中的解决方法 →
+                </a>
+            </div>
             <button onclick="window.closeErrorModal()" class="btn-danger" style="width:100%; margin-top:20px;">关闭</button>
         </div>
     </div>
 
-    <script>
+    <!-- 使用文档 Modal -->
+    <div id="docs-modal" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width:680px; max-height:82vh; overflow-y:auto; padding:0;">
+            <div class="modal-header" style="position:sticky; top:0; background:var(--bg-card); z-index:10; padding:20px 24px; border-bottom:1px solid var(--border-light);">
+                <h3 style="display:flex; align-items:center; gap:8px;"><i class="fas fa-book-open" style="color:var(--primary-500);"></i> 使用文档</h3>
+                <button class="modal-close" onclick="window.closeDocsModal()">&times;</button>
+            </div>
+            <!-- 文档目录 -->
+            <div id="docs-toc" style="padding:16px 24px 12px; border-bottom:1px solid var(--border-light); background:var(--ui-tier2-bg);">
+                <div style="font-size:0.8rem; color:var(--text-tertiary); margin-bottom:8px; text-transform:uppercase; letter-spacing:.05em;">目录</div>
+                <div style="display:flex; flex-wrap:wrap; gap:6px;">
+                    <a href="javascript:void(0)" onclick="window.docsScrollTo('doc-intro')" style="font-size:0.82rem; color:var(--primary-600); text-decoration:none; padding:3px 10px; background:var(--primary-50); border:1px solid var(--primary-200); border-radius:20px;">产品简介</a>
+                    <a href="javascript:void(0)" onclick="window.docsScrollTo('doc-quickstart')" style="font-size:0.82rem; color:var(--primary-600); text-decoration:none; padding:3px 10px; background:var(--primary-50); border:1px solid var(--primary-200); border-radius:20px;">快速上手</a>
+                    <a href="javascript:void(0)" onclick="window.docsScrollTo('doc-features')" style="font-size:0.82rem; color:var(--primary-600); text-decoration:none; padding:3px 10px; background:var(--primary-50); border:1px solid var(--primary-200); border-radius:20px;">功能详解</a>
+                    <a href="javascript:void(0)" onclick="window.docsScrollTo('doc-errors')" style="font-size:0.82rem; color:var(--danger-600); text-decoration:none; padding:3px 10px; background:var(--danger-50,#fef2f2); border:1px solid var(--danger-200,#fecaca); border-radius:20px;">报错解决</a>
+                    <a href="javascript:void(0)" onclick="window.docsScrollTo('doc-faq')" style="font-size:0.82rem; color:var(--primary-600); text-decoration:none; padding:3px 10px; background:var(--primary-50); border:1px solid var(--primary-200); border-radius:20px;">常见问题</a>
+                </div>
+            </div>
+            <!-- 文档正文 -->
+            <div id="docs-body" style="padding:24px; line-height:1.75; color:var(--text-primary);">
+
+                <!-- 一、产品简介 -->
+                <div id="doc-intro">
+                    <h2 style="font-size:1.25rem; font-weight:700; color:var(--primary-700); border-left:4px solid var(--primary-500); padding-left:12px; margin:0 0 14px;">一、产品简介</h2>
+                    <p style="color:var(--text-secondary); margin-bottom:10px;">IBTimeManager 是一款面向 IB 学生（及其他需要长期规划的学习者）的<strong>计划生成工具</strong>。</p>
+                    <p style="color:var(--text-secondary);">你只需要告诉它：你有哪些任务/目标、每个任务需要多少时间、截止日期是什么时候，它会自动帮你分配每天该做什么，生成一张可视化的学习计划表。</p>
+                    <hr style="margin:20px 0; border:none; border-top:1px solid var(--border-light);">
+                </div>
+
+                <!-- 二、快速上手 -->
+                <div id="doc-quickstart">
+                    <h2 style="font-size:1.25rem; font-weight:700; color:var(--primary-700); border-left:4px solid var(--primary-500); padding-left:12px; margin:0 0 14px;">二、快速上手</h2>
+                    <div style="counter-reset:qs-step;">
+                    <div style="display:flex; gap:14px; margin-bottom:14px; padding:14px; background:var(--ui-tier2-bg); border-radius:10px; border:1px solid var(--ui-tier2-border);">
+                        <div style="width:28px; height:28px; border-radius:50%; background:var(--primary-500); color:white; display:flex; align-items:center; justify-content:center; font-weight:700; flex-shrink:0;">1</div>
+                        <div><strong>添加大目标</strong><br><span style="color:var(--text-secondary); font-size:0.9rem;">在左侧「目标管理」填写目标名称、优先级、预计时间、截止日期，点击「＋ 添加大目标」。</span></div>
+                    </div>
+                    <div style="display:flex; gap:14px; margin-bottom:14px; padding:14px; background:var(--ui-tier2-bg); border-radius:10px; border:1px solid var(--ui-tier2-border);">
+                        <div style="width:28px; height:28px; border-radius:50%; background:var(--accent-500); color:white; display:flex; align-items:center; justify-content:center; font-weight:700; flex-shrink:0;">2</div>
+                        <div><strong>拆分子目标（可选）</strong><br><span style="color:var(--text-secondary); font-size:0.9rem;">点击大目标旁边的 <i class="fas fa-plus-circle"></i> 按钮，为该目标添加子目标，每个子目标独立设置时间和截止日期。</span></div>
+                    </div>
+                    <div style="display:flex; gap:14px; margin-bottom:14px; padding:14px; background:var(--ui-tier2-bg); border-radius:10px; border:1px solid var(--ui-tier2-border);">
+                        <div style="width:28px; height:28px; border-radius:50%; background:var(--success-500); color:white; display:flex; align-items:center; justify-content:center; font-weight:700; flex-shrink:0;">3</div>
+                        <div><strong>设置日期范围</strong><br><span style="color:var(--text-secondary); font-size:0.9rem;">在「计划日期范围」区域设置开始和结束日期。默认开启「自动调整」，会根据任务截止日期自动设置。</span></div>
+                    </div>
+                    <div style="display:flex; gap:14px; margin-bottom:14px; padding:14px; background:var(--ui-tier2-bg); border-radius:10px; border:1px solid var(--ui-tier2-border);">
+                        <div style="width:28px; height:28px; border-radius:50%; background:var(--warning-500); color:white; display:flex; align-items:center; justify-content:center; font-weight:700; flex-shrink:0;">4</div>
+                        <div><strong>生成计划</strong><br><span style="color:var(--text-secondary); font-size:0.9rem;">点击「✨ 生成计划」，右侧显示按天排列的任务表，以及统计信息。</span></div>
+                    </div>
+                    <div style="display:flex; gap:14px; padding:14px; background:var(--ui-tier2-bg); border-radius:10px; border:1px solid var(--ui-tier2-border);">
+                        <div style="width:28px; height:28px; border-radius:50%; background:var(--primary-400); color:white; display:flex; align-items:center; justify-content:center; font-weight:700; flex-shrink:0;">5</div>
+                        <div><strong>导出/打印</strong><br><span style="color:var(--text-secondary); font-size:0.9rem;">点击「导出 Excel」保存为电子表格，或点击「打印」直接打印。</span></div>
+                    </div>
+                    </div>
+                    <hr style="margin:20px 0; border:none; border-top:1px solid var(--border-light);">
+                </div>
+
+                <!-- 三、功能详解 -->
+                <div id="doc-features">
+                    <h2 style="font-size:1.25rem; font-weight:700; color:var(--primary-700); border-left:4px solid var(--primary-500); padding-left:12px; margin:0 0 14px;">三、功能详解</h2>
+
+                    <h3 style="font-size:1rem; font-weight:600; color:var(--text-primary); margin:0 0 10px;">3.1 目标管理</h3>
+                    <div style="background:var(--ui-tier2-bg); border-radius:8px; overflow:hidden; border:1px solid var(--ui-tier2-border); margin-bottom:16px;">
+                        <table style="width:100%; border-collapse:collapse; font-size:0.88rem;">
+                            <thead><tr style="background:var(--ui-tier3-bg);"><th style="padding:8px 12px; text-align:left;">字段</th><th style="padding:8px 12px; text-align:left;">说明</th></tr></thead>
+                            <tbody>
+                                <tr style="border-top:1px solid var(--border-light);"><td style="padding:8px 12px; color:var(--primary-700); font-weight:500;">目标名称</td><td style="padding:8px 12px; color:var(--text-secondary);">任意文字，例如「英语 EE」</td></tr>
+                                <tr style="border-top:1px solid var(--border-light);"><td style="padding:8px 12px; color:var(--primary-700); font-weight:500;">优先级</td><td style="padding:8px 12px; color:var(--text-secondary);">高（最先安排）/ 中 / 低</td></tr>
+                                <tr style="border-top:1px solid var(--border-light);"><td style="padding:8px 12px; color:var(--primary-700); font-weight:500;">预计时间</td><td style="padding:8px 12px; color:var(--text-secondary);">完成所需总小时数</td></tr>
+                                <tr style="border-top:1px solid var(--border-light);"><td style="padding:8px 12px; color:var(--primary-700); font-weight:500;">截止日期（DDL）</td><td style="padding:8px 12px; color:var(--text-secondary);">必须完成的最晚日期</td></tr>
+                                <tr style="border-top:1px solid var(--border-light);"><td style="padding:8px 12px; color:var(--primary-700); font-weight:500;">预设模板</td><td style="padding:8px 12px; color:var(--text-secondary);">自动填充多个子目标（可选）</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p style="color:var(--text-secondary); font-size:0.88rem; margin-bottom:16px;"><strong>预设模板：</strong>📚 考试复习（内容复习→习题练习→模拟测试→重点回顾）；🛠️ 项目化学习（调研→初步规划→详细计划→成果准备）。</p>
+
+                    <h3 style="font-size:1rem; font-weight:600; color:var(--text-primary); margin:0 0 10px;">3.2 算法说明</h3>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px;">
+                        <div style="padding:12px; background:var(--primary-50); border:1px solid var(--primary-200); border-radius:8px; font-size:0.88rem;"><strong style="color:var(--primary-700);">普通/密集模式</strong><br><span style="color:var(--text-secondary);">从计划开始日期，按优先级高→低、截止日期近→远，将任务塞满每天时间槽。</span></div>
+                        <div style="padding:12px; background:var(--accent-50,#f0fdfa); border:1px solid var(--accent-200,#99f6e4); border-radius:8px; font-size:0.88rem;"><strong style="color:var(--accent-700);">离散模式</strong><br><span style="color:var(--text-secondary);">从截止日期往前倒推，任务集中在截止日期前完成，减少早期压力。</span></div>
+                    </div>
+
+                    <h3 style="font-size:1rem; font-weight:600; color:var(--text-primary); margin:0 0 10px;">3.3 设置说明</h3>
+                    <div style="background:var(--ui-tier2-bg); border-radius:8px; overflow:hidden; border:1px solid var(--ui-tier2-border); margin-bottom:16px;">
+                        <table style="width:100%; border-collapse:collapse; font-size:0.88rem;">
+                            <thead><tr style="background:var(--ui-tier3-bg);"><th style="padding:8px 12px; text-align:left;">设置项</th><th style="padding:8px 12px; text-align:left;">说明</th><th style="padding:8px 12px; text-align:left;">默认值</th></tr></thead>
+                            <tbody>
+                                <tr style="border-top:1px solid var(--border-light);"><td style="padding:8px 12px; font-weight:500;">每日最大学习时间</td><td style="padding:8px 12px; color:var(--text-secondary);">每天最多安排几小时任务</td><td style="padding:8px 12px; color:var(--text-secondary);">6 小时</td></tr>
+                                <tr style="border-top:1px solid var(--border-light);"><td style="padding:8px 12px; font-weight:500;">任务顺延</td><td style="padding:8px 12px; color:var(--text-secondary);">未完成任务是否顺延到下一天</td><td style="padding:8px 12px; color:var(--text-secondary);">开启</td></tr>
+                                <tr style="border-top:1px solid var(--border-light);"><td style="padding:8px 12px; font-weight:500;">最大计划天数</td><td style="padding:8px 12px; color:var(--text-secondary);">计划表最多显示的天数</td><td style="padding:8px 12px; color:var(--text-secondary);">30 天</td></tr>
+                                <tr style="border-top:1px solid var(--border-light);"><td style="padding:8px 12px; font-weight:500;">任务分布密度</td><td style="padding:8px 12px; color:var(--text-secondary);">离散(60%) / 一般(80%) / 密集(100%)</td><td style="padding:8px 12px; color:var(--text-secondary);">一般</td></tr>
+                                <tr style="border-top:1px solid var(--border-light);"><td style="padding:8px 12px; font-weight:500;">自动调整日期范围</td><td style="padding:8px 12px; color:var(--text-secondary);">根据任务截止日期自动设置结束日期</td><td style="padding:8px 12px; color:var(--text-secondary);">开启</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h3 style="font-size:1rem; font-weight:600; color:var(--text-primary); margin:0 0 10px;">3.4 归档</h3>
+                    <p style="color:var(--text-secondary); font-size:0.88rem; margin-bottom:16px;">每次成功生成计划，系统自动保存到归档。点击左侧「归档」可查看历史计划、恢复目标到编辑区、批量删除。</p>
+
+                    <h3 style="font-size:1rem; font-weight:600; color:var(--text-primary); margin:0 0 10px;">3.5 导入/导出</h3>
+                    <p style="color:var(--text-secondary); font-size:0.88rem; margin-bottom:4px;"><strong>导出：</strong>点击「导出」将目标和设置压缩为代码，可复制保存或分享。</p>
+                    <p style="color:var(--text-secondary); font-size:0.88rem; margin-bottom:4px;"><strong>导入：</strong>点击「导入」粘贴代码即可恢复。</p>
+                    <p style="font-size:0.85rem; color:var(--warning-600); background:var(--warning-50,#fffbeb); border:1px solid var(--warning-200,#fde68a); border-radius:6px; padding:8px 12px; margin-top:8px;">⚠️ 导入会<strong>覆盖</strong>当前的目标数据，请确认已备份。</p>
+                    <hr style="margin:20px 0; border:none; border-top:1px solid var(--border-light);">
+                </div>
+
+                <!-- 四、报错解决手册 -->
+                <div id="doc-errors">
+                    <h2 style="font-size:1.25rem; font-weight:700; color:var(--danger-700); border-left:4px solid var(--danger-500); padding-left:12px; margin:0 0 14px;">四、报错解决手册</h2>
+
+                    <div id="doc-err-date" style="margin-bottom:18px; padding:16px; background:var(--danger-50,#fef2f2); border:1px solid var(--danger-200,#fecaca); border-radius:10px;">
+                        <div style="font-weight:700; color:var(--danger-700); margin-bottom:8px;">❌ 「日期范围无效」</div>
+                        <p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:8px;"><strong>原因：</strong>开始日期 ≥ 结束日期，或日期格式错误。</p>
+                        <p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:4px;"><strong>解决方法：</strong></p>
+                        <ul style="color:var(--text-secondary); font-size:0.9rem; padding-left:20px; margin:0;">
+                            <li>检查「计划开始日期」是否早于「计划结束日期」</li>
+                            <li>如开启了「自动调整日期范围」，检查所有任务的截止日期是否晚于今天</li>
+                        </ul>
+                    </div>
+
+                    <div id="doc-err-maxdays" style="margin-bottom:18px; padding:16px; background:var(--danger-50,#fef2f2); border:1px solid var(--danger-200,#fecaca); border-radius:10px;">
+                        <div style="font-weight:700; color:var(--danger-700); margin-bottom:8px;">❌ 「计划天数超过了最大设置天数」</div>
+                        <p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:8px;"><strong>原因：</strong>你的日期范围超过了设置中允许的最大天数。</p>
+                        <p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:4px;"><strong>解决方法：</strong></p>
+                        <ul style="color:var(--text-secondary); font-size:0.9rem; padding-left:20px; margin:0;">
+                            <li>打开<strong>设置</strong> → 将「最大计划天数」调大（最多可设 365 天）</li>
+                            <li>或者缩短你的计划日期范围</li>
+                        </ul>
+                    </div>
+
+                    <div id="doc-err-notask" style="margin-bottom:18px; padding:16px; background:var(--danger-50,#fef2f2); border:1px solid var(--danger-200,#fecaca); border-radius:10px;">
+                        <div style="font-weight:700; color:var(--danger-700); margin-bottom:8px;">❌ 「没有需要规划的任务」</div>
+                        <p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:8px;"><strong>原因：</strong>还没有添加任何目标，或所有目标截止日期已过期且开启了「只规划今天及以后的任务」。</p>
+                        <p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:4px;"><strong>解决方法：</strong></p>
+                        <ul style="color:var(--text-secondary); font-size:0.9rem; padding-left:20px; margin:0;">
+                            <li>检查目标列表是否为空，如为空请先添加目标</li>
+                            <li>打开<strong>设置</strong> → 关闭「只规划今天及以后的任务」</li>
+                            <li>更新截止日期为未来的日期</li>
+                        </ul>
+                    </div>
+
+                    <div id="doc-err-timeout" style="margin-bottom:18px; padding:16px; background:var(--danger-50,#fef2f2); border:1px solid var(--danger-200,#fecaca); border-radius:10px;">
+                        <div style="font-weight:700; color:var(--danger-700); margin-bottom:8px;">❌ 「任务"XXX"无法在截止日期前完成」</div>
+                        <p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:8px;"><strong>原因：</strong>截止日期前每天的可用时间不够完成该任务（预计时间太长/截止日期太近/密度为离散）。</p>
+                        <p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:4px;"><strong>解决方法（按简易程度）：</strong></p>
+                        <ol style="color:var(--text-secondary); font-size:0.9rem; padding-left:20px; margin:0;">
+                            <li>调高每日学习时间：设置 → 每日最大学习时间</li>
+                            <li>调整分布密度：设置 → 任务分布密度 → 改为「一般」或「密集」</li>
+                            <li>延长截止日期：点击目标旁的编辑按钮，推迟该任务 DDL</li>
+                            <li>拆分任务：将大任务拆成多个子目标，分配不同截止日期</li>
+                            <li>减少预计时间：如原估算偏高，可适当调低</li>
+                        </ol>
+                    </div>
+                    <hr style="margin:20px 0; border:none; border-top:1px solid var(--border-light);">
+                </div>
+
+                <!-- 五、常见问题 -->
+                <div id="doc-faq">
+                    <h2 style="font-size:1.25rem; font-weight:700; color:var(--primary-700); border-left:4px solid var(--primary-500); padding-left:12px; margin:0 0 14px;">五、常见问题 FAQ</h2>
+                    <div style="display:flex; flex-direction:column; gap:12px;">
+                        <details style="background:var(--ui-tier2-bg); border:1px solid var(--ui-tier2-border); border-radius:8px; padding:12px 16px;">
+                            <summary style="font-weight:600; cursor:pointer; color:var(--text-primary);">为什么有些天没有任务，有些天任务很多？</summary>
+                            <p style="margin-top:10px; color:var(--text-secondary); font-size:0.9rem;">取决于「任务分布密度」。离散模式下任务集中在截止日期前；希望均匀分布请切换为「一般」模式。</p>
+                        </details>
+                        <details style="background:var(--ui-tier2-bg); border:1px solid var(--ui-tier2-border); border-radius:8px; padding:12px 16px;">
+                            <summary style="font-weight:600; cursor:pointer; color:var(--text-primary);">修改目标后需要重新生成吗？</summary>
+                            <p style="margin-top:10px; color:var(--text-secondary); font-size:0.9rem;">是的，修改后点击「重新编辑」再点「生成计划」即可。</p>
+                        </details>
+                        <details style="background:var(--ui-tier2-bg); border:1px solid var(--ui-tier2-border); border-radius:8px; padding:12px 16px;">
+                            <summary style="font-weight:600; cursor:pointer; color:var(--text-primary);">数据会丢失吗？</summary>
+                            <p style="margin-top:10px; color:var(--text-secondary); font-size:0.9rem;">数据保存在浏览器 LocalStorage 中，清除浏览器缓存或更换浏览器会导致丢失。建议定期使用「导出」功能备份。</p>
+                        </details>
+                        <details style="background:var(--ui-tier2-bg); border:1px solid var(--ui-tier2-border); border-radius:8px; padding:12px 16px;">
+                            <summary style="font-weight:600; cursor:pointer; color:var(--text-primary);">可以在手机上使用吗？</summary>
+                            <p style="margin-top:10px; color:var(--text-secondary); font-size:0.9rem;">支持手机浏览器访问，界面已做移动端适配。建议使用 Chrome 以获得最佳体验（含通知功能）。</p>
+                        </details>
+                        <details style="background:var(--ui-tier2-bg); border:1px solid var(--ui-tier2-border); border-radius:8px; padding:12px 16px;">
+                            <summary style="font-weight:600; cursor:pointer; color:var(--text-primary);">导入时提示「数据格式错误」怎么办？</summary>
+                            <p style="margin-top:10px; color:var(--text-secondary); font-size:0.9rem;">代码可能损坏或不完整，请确认粘贴的是完整导出代码，不要有多余空格或字符。</p>
+                        </details>
+                        <details style="background:var(--ui-tier2-bg); border:1px solid var(--ui-tier2-border); border-radius:8px; padding:12px 16px;">
+                            <summary style="font-weight:600; cursor:pointer; color:var(--text-primary);">通知功能没有弹出来？</summary>
+                            <p style="margin-top:10px; color:var(--text-secondary); font-size:0.9rem;">确认使用 Chrome（iOS Safari 不支持）→ 设置 → 点击「请求通知权限」→ 在弹出框点击「允许」。</p>
+                        </details>
+                    </div>
+                    <p style="text-align:center; margin-top:20px; font-size:0.85rem; color:var(--text-tertiary);">如有其他问题，欢迎通过 <a href="https://github.com/GZMB-GameDev/IBTimeManager/issues" target="_blank" style="color:var(--primary-500);">GitHub Issues</a> 提交反馈。</p>
+                </div>
+
+            </div><!-- /docs-body -->
+        </div>
+    </div>
         (function() {
             // ========== 通用工具函数 ==========
             /** 打开一个 modal-overlay 弹窗 */
@@ -1750,6 +1953,28 @@
             function showErrorModal(msg) { 
                 const errorMessageText = document.getElementById('error-message-text');
                 if (errorMessageText) errorMessageText.textContent = msg; 
+                // 根据报错内容匹配文档锚点
+                const docLinkEl = document.getElementById('error-doc-link');
+                const docAnchorEl = document.getElementById('error-doc-anchor');
+                let docAnchor = null;
+                if (msg.includes('日期范围')) {
+                    docAnchor = 'doc-err-date';
+                } else if (msg.includes('计划天数') || msg.includes('超过了最大')) {
+                    docAnchor = 'doc-err-maxdays';
+                } else if (msg.includes('没有需要规划')) {
+                    docAnchor = 'doc-err-notask';
+                } else if (msg.includes('无法在截止日期前完成')) {
+                    docAnchor = 'doc-err-timeout';
+                }
+                if (docAnchor && docLinkEl && docAnchorEl) {
+                    docLinkEl.style.display = 'block';
+                    docAnchorEl.onclick = function() {
+                        window.closeErrorModal();
+                        window.openDocsModal(docAnchor);
+                    };
+                } else if (docLinkEl) {
+                    docLinkEl.style.display = 'none';
+                }
                 openModal('error-modal');
             }
             window.closeErrorModal = () => closeModal('error-modal');
@@ -1868,6 +2093,36 @@
                 });
             });
             window.openFeedback    = () => window.open(FEEDBACK_URL, '_blank');
+
+            // ========== 使用文档 ==========
+            window.openDocsModal = function(anchorId) {
+                openModal('docs-modal');
+                if (anchorId) {
+                    // 等 modal 渲染完再滚动
+                    setTimeout(() => {
+                        const target = document.getElementById(anchorId);
+                        const body = document.getElementById('docs-body');
+                        if (target && body) {
+                            // 找到 docs-modal 的滚动容器
+                            const scrollEl = document.getElementById('docs-modal').querySelector('.modal-content');
+                            if (scrollEl) {
+                                const offset = target.offsetTop - scrollEl.offsetTop - 80;
+                                scrollEl.scrollTo({ top: offset, behavior: 'smooth' });
+                            }
+                        }
+                    }, 120);
+                }
+            };
+            window.closeDocsModal = () => closeModal('docs-modal');
+            window.docsScrollTo = function(anchorId) {
+                const target = document.getElementById(anchorId);
+                const scrollEl = document.getElementById('docs-modal').querySelector('.modal-content');
+                if (target && scrollEl) {
+                    const offset = target.offsetTop - 80;
+                    scrollEl.scrollTo({ top: offset, behavior: 'smooth' });
+                }
+            };
+
             window.showImportModal = () => openModal('import-modal');
             window.closeImportModal = () => closeModal('import-modal');
             window.closeExportModal = () => closeModal('export-modal');
