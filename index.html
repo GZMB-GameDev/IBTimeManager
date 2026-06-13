@@ -1597,6 +1597,8 @@
                                     <div style="display:flex; gap:10px; margin-top:20px; flex-wrap:wrap;">
                                         <button id="export-excel" class="btn-success"><i class="fas fa-file-excel"></i> 导出Excel</button>
                                         <button id="copy-widget-data" class="btn-info"><i class="fas fa-mobile-alt"></i> 复制小组件数据</button>
+                                        <a id="download-widget-script" href="scriptable-widget.js" target="_blank" rel="noopener" class="btn-info" style="text-decoration:none; display:inline-flex; align-items:center; gap:6px;"><i class="fas fa-download"></i> 获取小组件脚本</a>
+                                        <button onclick="showWidgetHelp()" class="btn-info" style="width:36px;height:36px;border-radius:50%;padding:0;display:inline-flex;align-items:center;justify-content:center;font-weight:bold;" title="如何安装小组件？">?</button>
                                         <button id="print-plan" class="btn-warning"><i class="fas fa-print"></i> 打印</button>
                                         <button id="re-edit-btn" class="btn-info"><i class="fas fa-undo-alt"></i> 重新编辑</button>
                                     </div>
@@ -1810,6 +1812,48 @@
                 </a>
             </div>
             <button onclick="window.closeErrorModal()" class="btn-danger" style="width:100%; margin-top:20px;">关闭</button>
+        </div>
+    </div>
+
+    <!-- 小组件帮助弹窗 -->
+    <div id="widget-help-modal" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width:420px;">
+            <div class="modal-header">
+                <h3>📱 如何安装 iOS 小组件？</h3>
+                <button class="modal-close" onclick="hideWidgetHelp()">&times;</button>
+            </div>
+            <div style="padding:4px 0; font-size:14px; line-height:1.8;">
+                <div style="margin-bottom:14px;">
+                    <div style="font-weight:600; color:var(--primary-600); margin-bottom:4px;">方法一：扫码获取（推荐）</div>
+                    <div style="text-align:center; margin:10px 0;">
+                        <img id="widget-qr" src="" alt="二维码" style="width:160px; height:160px; border-radius:8px; background:var(--gray-100);">
+                    </div>
+                    <div style="font-size:12px; color:var(--text-secondary); text-align:center;">用 iPhone 相机扫码，在 Safari 中打开脚本</div>
+                </div>
+                <hr style="border:none; border-top:1px solid var(--border-light); margin:14px 0;">
+                <div style="margin-bottom:14px;">
+                    <div style="font-weight:600; color:var(--primary-600); margin-bottom:6px;">方法二：手动安装</div>
+                    <div style="font-size:13px; color:var(--text-secondary);">
+                        <div style="margin-bottom:4px;">1. 在 iPhone 上用 Safari 打开下方地址：</div>
+                        <div id="widget-script-url" style="background:var(--gray-100); padding:8px 10px; border-radius:6px; margin:6px 0; font-family:monospace; font-size:11px; word-break:break-all; user-select:all;">https://ib-plan-making.netlify.app/scriptable-widget.js</div>
+                        <div style="margin-top:8px;">2. 点击底部「分享」→ 找到 <b>Scriptable</b> → 点击打开</div>
+                        <div>3. Scriptable 自动导入，命名为 <b>PlannerPro</b></div>
+                    </div>
+                </div>
+                <hr style="border:none; border-top:1px solid var(--border-light); margin:14px 0;">
+                <div style="margin-bottom:14px;">
+                    <div style="font-weight:600; color:var(--primary-600); margin-bottom:6px;">添加小组件到主屏幕</div>
+                    <div style="font-size:13px; color:var(--text-secondary);">
+                        <div>1. 生成计划后点击「📱 复制小组件数据」</div>
+                        <div>2. 打开 Scriptable 运行 <b>PlannerPro</b> 脚本一次</div>
+                        <div>3. 长按 iPhone 主屏幕 → 点「<b>+</b>」→ 选 Scriptable</div>
+                        <div>4. 编辑小组件 → 脚本选 <b>PlannerPro</b></div>
+                    </div>
+                </div>
+                <div style="font-size:12px; color:var(--text-tertiary); background:var(--gray-50); padding:8px 10px; border-radius:6px;">
+                    ⚠️ 每次更新计划后，需重新复制数据并在 Scriptable 运行一次脚本。
+                </div>
+            </div>
         </div>
     </div>
 
@@ -3714,6 +3758,29 @@
         } else {
             initPWA();
         }
+
+        // ---- 小组件帮助弹窗 ----
+        window.showWidgetHelp = function() {
+            const modal = document.getElementById('widget-help-modal');
+            if (!modal) return;
+            // 设置二维码（使用线上地址）
+            const qr = document.getElementById('widget-qr');
+            if (qr) {
+                const scriptUrl = 'https://ib-plan-making.netlify.app/scriptable-widget.js';
+                qr.src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(scriptUrl);
+                qr.onerror = function() { this.style.display='none'; };
+            }
+            modal.classList.remove('hidden');
+        };
+        window.hideWidgetHelp = function() {
+            const modal = document.getElementById('widget-help-modal');
+            if (modal) modal.classList.add('hidden');
+        };
+        // 点击遮罩关闭
+        (function(){
+            const m = document.getElementById('widget-help-modal');
+            if (m) m.addEventListener('click', function(e){ if(e.target===m) window.hideWidgetHelp(); });
+        })();
 
         // ---- 钩子：计划生成后自动保存今日快照 ----
         // 等主 JS 初始化完成后再挂钩
