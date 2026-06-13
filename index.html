@@ -1596,6 +1596,7 @@
                                     <div class="plan-table-container"><table class="plan-table" id="plan-table"></table></div>
                                     <div style="display:flex; gap:10px; margin-top:20px; flex-wrap:wrap;">
                                         <button id="export-excel" class="btn-success"><i class="fas fa-file-excel"></i> 导出Excel</button>
+                                        <button id="copy-widget-data" class="btn-info"><i class="fas fa-mobile-alt"></i> 复制小组件数据</button>
                                         <button id="print-plan" class="btn-warning"><i class="fas fa-print"></i> 打印</button>
                                         <button id="re-edit-btn" class="btn-info"><i class="fas fa-undo-alt"></i> 重新编辑</button>
                                     </div>
@@ -3722,6 +3723,65 @@
                 btn.addEventListener('click', function() {
                     // 延迟等计划表渲染完成
                     setTimeout(() => { window.savePWATodaySnapshot && window.savePWATodaySnapshot(); }, 300);
+                });
+            }
+
+            // ---- 复制小组件数据按钮 ----
+            const copyWidgetBtn = document.getElementById('copy-widget-data');
+            if (copyWidgetBtn) {
+                copyWidgetBtn.addEventListener('click', function() {
+                    try {
+                        const snapRaw = localStorage.getItem(TODAY_SNAP_KEY);
+                        if (!snapRaw) {
+                            alert('请先生成计划，才能复制小组件数据。');
+                            return;
+                        }
+                        let snap;
+                        try { snap = JSON.parse(snapRaw); } catch(e) {
+                            alert('数据格式异常，请重新生成计划。');
+                            return;
+                        }
+                        if (!snap.tasks || snap.tasks.length === 0) {
+                            alert('今日没有任务，无法复制。');
+                            return;
+                        }
+                        // 合并完成状态
+                        const completedRaw = localStorage.getItem(COMPLETED_SNAP_KEY);
+                        let completed = {};
+                        try { completed = JSON.parse(completedRaw) || {}; } catch(e) {}
+                        const exportData = {
+                            date: snap.date,
+                            tasks: snap.tasks.map(t => ({
+                                name: t.name,
+                                time: t.time || '',
+                                priority: t.priority || 'medium',
+                                completed: !!completed[t.taskId]
+                            }))
+                        };
+                        const json = JSON.stringify(exportData);
+                        navigator.clipboard.writeText(json).then(() => {
+                            // 按钮反馈
+                            const original = copyWidgetBtn.innerHTML;
+                            copyWidgetBtn.innerHTML = '<i class="fas fa-check"></i> 已复制';
+                            copyWidgetBtn.style.background = '#10b981';
+                            setTimeout(() => {
+                                copyWidgetBtn.innerHTML = original;
+                                copyWidgetBtn.style.background = '';
+                            }, 2000);
+                        }).catch(() => {
+                            // fallback: textarea 方式
+                            const ta = document.createElement('textarea');
+                            ta.value = json;
+                            ta.style.cssText = 'position:fixed;left:-9999px;';
+                            document.body.appendChild(ta);
+                            ta.select();
+                            document.execCommand('copy');
+                            document.body.removeChild(ta);
+                            alert('小组件数据已复制到剪贴板！\n请打开 Scriptable 运行脚本导入。');
+                        });
+                    } catch(e) {
+                        alert('复制失败：' + e.message);
+                    }
                 });
             }
         });
