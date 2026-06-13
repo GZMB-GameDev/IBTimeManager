@@ -2,8 +2,19 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>规划师 - PlannerPro</title>
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#3b82f6">
+    <meta name="mobile-web-app-capable" content="yes">
+    <!-- iOS Safari 专属 -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="规划师">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <!-- iOS Splash（通用占位，可替换为实际尺寸） -->
+    <link rel="apple-touch-startup-image" href="icons/icon-512.png">
     <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script defer src="https://cdn.bootcdn.net/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script defer src="https://cdn.bootcdn.net/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
@@ -417,9 +428,6 @@
             0%, 100% { box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.2), 0 0 20px rgba(37, 99, 235, 0.3); }
             50% { box-shadow: 0 0 0 6px rgba(37, 99, 235, 0.3), 0 0 30px rgba(37, 99, 235, 0.4); }
         }
-        .modal-overlay:not(.hidden) { animation: modalFadeIn 0.2s ease; }
-        @keyframes modalFadeIn { from { opacity: 0; } to { opacity: 1; } }
-
         /* ========== UI交互动效（基于设置） ========== */
         /* 动效速度 */
         .ui-speed-slow { --ui-anim-duration: 0.4s; }
@@ -705,15 +713,51 @@
         [data-theme="dark"] .template-option {
             background: rgba(255,255,255,0.06) !important;
         }
-        /* 深色模式 tour-modal 标题颜色 */
-        [data-theme="dark"] .tour-step h4 {
-            color: var(--accent-300) !important;
+        /* 新手教程进度条 */
+        .tour-progress-bar {
+            width: 100%; height: 6px;
+            background: var(--gray-200);
+            border-radius: 3px;
+            margin-bottom: 20px;
+            overflow: hidden;
         }
-        [data-theme="dark"] .tour-dot {
-            background: var(--gray-500) !important;
+        .tour-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-500), var(--accent-500));
+            border-radius: 3px;
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            width: 0%;
         }
-        [data-theme="dark"] .tour-dot.active {
-            background: var(--primary-400) !important;
+        /* 新手教程高亮边框 */
+        .tour-highlight {
+            position: fixed;
+            pointer-events: none;
+            z-index: 998;
+            border: 3px solid var(--primary-500);
+            border-radius: 12px;
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.2), 0 0 20px rgba(37, 99, 235, 0.4);
+            animation: tourHighlightPulse 1.5s ease-in-out infinite;
+        }
+        @keyframes tourHighlightPulse {
+            0%, 100% { box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.2), 0 0 20px rgba(37, 99, 235, 0.4); }
+            50% { box-shadow: 0 0 0 8px rgba(37, 99, 235, 0.3), 0 0 35px rgba(37, 99, 235, 0.5); }
+        }
+        /* 新手教程庆祝动画 */
+        @keyframes tourCelebrate {
+            0% { transform: scale(1); }
+            30% { transform: scale(1.05); }
+            60% { transform: scale(0.97); }
+            80% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+        .tour-step-finish {
+            animation: tourCelebrate 0.6s ease-out;
+        }
+        .modal-overlay:not(.hidden) { animation: modalFadeIn 0.2s ease; }
+        @keyframes modalFadeIn { from { opacity: 0; } to { opacity: 1; } }
+        /* 新手教程弹窗遮罩更透明，方便看到背景高亮 */
+        #tour-modal.modal-overlay {
+            background: rgba(0,0,0,0.35);
         }
         [data-theme="dark"] body.bg-effect-none { background: var(--bg-body-dark); }
         [data-theme="dark"] body.bg-effect-gradient {
@@ -1278,9 +1322,184 @@
                 margin-bottom: 8px;
             }
         }
+        /* ========== 今日任务 PWA 启动视图 ========== */
+        #pwa-today-view {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 20000;
+            background: var(--bg-body-light, linear-gradient(135deg, #f6f9fc 0%, #e6f0f9 100%));
+            flex-direction: column;
+            padding: env(safe-area-inset-top, 20px) 0 env(safe-area-inset-bottom, 20px);
+            overflow-y: auto;
+        }
+        [data-theme="dark"] #pwa-today-view {
+            background: var(--bg-body-dark, linear-gradient(135deg, #1a2634, #2c3e50));
+        }
+        #pwa-today-view.active { display: flex; }
+        .pwa-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px 12px;
+            border-bottom: 1px solid var(--border-light);
+        }
+        .pwa-header-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .pwa-header-title h2 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0;
+        }
+        .pwa-header-title .pwa-date-badge {
+            font-size: 0.75rem;
+            background: var(--primary-100, #dbeafe);
+            color: var(--primary-700, #1d4ed8);
+            padding: 3px 9px;
+            border-radius: 99px;
+            font-weight: 600;
+        }
+        .pwa-open-full-btn {
+            font-size: 0.8rem;
+            padding: 6px 14px;
+            border-radius: 8px;
+            background: var(--primary-500, #3b82f6);
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: background 0.15s;
+        }
+        .pwa-open-full-btn:active { background: var(--primary-600, #2563eb); }
+        .pwa-task-list {
+            flex: 1;
+            padding: 16px 16px 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .pwa-task-card {
+            background: var(--bg-card, rgba(255,255,255,0.9));
+            border-radius: 14px;
+            padding: 14px 16px;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            border: 1px solid var(--border-light);
+            transition: opacity 0.2s;
+        }
+        .pwa-task-card.done { opacity: 0.45; }
+        .pwa-task-card.done .pwa-task-name { text-decoration: line-through; }
+        .pwa-task-cb {
+            width: 22px;
+            height: 22px;
+            border-radius: 6px;
+            border: 2px solid var(--primary-400, #60a5fa);
+            background: transparent;
+            cursor: pointer;
+            flex-shrink: 0;
+            appearance: none;
+            -webkit-appearance: none;
+            position: relative;
+            margin-top: 1px;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .pwa-task-cb:checked {
+            background: var(--primary-500, #3b82f6);
+            border-color: var(--primary-500, #3b82f6);
+        }
+        .pwa-task-cb:checked::after {
+            content: '';
+            position: absolute;
+            left: 4px; top: 1px;
+            width: 8px; height: 12px;
+            border: 2px solid #fff;
+            border-top: none; border-left: none;
+            transform: rotate(45deg);
+        }
+        .pwa-task-info { flex: 1; min-width: 0; }
+        .pwa-task-name {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+            line-height: 1.3;
+        }
+        .pwa-task-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .pwa-priority-dot {
+            width: 7px; height: 7px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .pwa-priority-dot.high { background: #ef4444; }
+        .pwa-priority-dot.medium { background: #f59e0b; }
+        .pwa-priority-dot.low { background: #10b981; }
+        .pwa-task-time {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+        }
+        .pwa-no-task {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+        .pwa-no-task .pwa-no-task-icon {
+            font-size: 3rem;
+            margin-bottom: 12px;
+        }
+        .pwa-no-task p { font-size: 1rem; margin: 0; }
+        .pwa-no-task small { font-size: 0.85rem; color: var(--text-tertiary); }
+        .pwa-progress-bar-wrap {
+            margin: 4px 16px 0;
+            height: 5px;
+            background: var(--gray-200, #e5e7eb);
+            border-radius: 99px;
+            overflow: hidden;
+        }
+        .pwa-progress-bar-fill {
+            height: 100%;
+            background: var(--primary-500, #3b82f6);
+            border-radius: 99px;
+            transition: width 0.4s ease;
+        }
+        .pwa-progress-text {
+            margin: 6px 16px 0;
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+        }
     </style>
 </head>
 <body class="bg-effect-none">
+    <!-- ========== PWA 今日任务视图 ========== -->
+    <div id="pwa-today-view">
+        <div class="pwa-header">
+            <div class="pwa-header-title">
+                <h2>📋 今日任务</h2>
+                <span class="pwa-date-badge" id="pwa-date-badge"></span>
+            </div>
+            <button class="pwa-open-full-btn" onclick="window.pwaSwitchToFull()">
+                <i class="fas fa-expand"></i> 完整视图
+            </button>
+        </div>
+        <div class="pwa-progress-bar-wrap">
+            <div class="pwa-progress-bar-fill" id="pwa-progress-fill" style="width:0%"></div>
+        </div>
+        <p class="pwa-progress-text" id="pwa-progress-text"></p>
+        <div class="pwa-task-list" id="pwa-task-list"></div>
+    </div>
     <!-- 加载界面 -->
     <div id="loading-overlay" class="loading-overlay">
         <div class="loading-content">
@@ -1326,7 +1545,7 @@
                 <div class="sidebar-item" onclick="window.openFeedback()">
                     <i class="fas fa-comment-dots"></i> <span>反馈</span>
                 </div>
-                <div class="sidebar-item" onclick="window.openTourModal()">
+                <div class="sidebar-item" onclick="window.openDocsModal()">
                     <i class="fas fa-question-circle"></i> <span>新手引导</span>
                 </div>
                 <div class="sidebar-item" onclick="window.openDocsModal()">
@@ -1530,61 +1749,6 @@
                 </div>
             </div>
             <button onclick="window.closeAboutModal()" class="btn-success" style="width:100%; margin-top: 20px;">关闭</button>
-        </div>
-    </div>
-
-    <div id="tour-modal" class="modal-overlay hidden">
-        <div class="modal-content" style="max-width: 520px;">
-            <div class="modal-header"><h3><i class="fas fa-compass"></i> 欢迎使用规划师</h3><button class="modal-close" onclick="window.closeTourModal()">&times;</button></div>
-            <div style="padding: 10px 0;">
-                <!-- 步骤指示器 -->
-                <div id="tour-steps" style="display: flex; justify-content: center; gap: 8px; margin-bottom: 20px;">
-                    <span class="tour-dot active" data-step="0" style="width: 10px; height: 10px; border-radius: 50%; background: var(--primary-500); cursor: pointer; transition: all 0.3s;"></span>
-                    <span class="tour-dot" data-step="1" style="width: 10px; height: 10px; border-radius: 50%; background: var(--gray-300); cursor: pointer; transition: all 0.3s;"></span>
-                    <span class="tour-dot" data-step="2" style="width: 10px; height: 10px; border-radius: 50%; background: var(--gray-300); cursor: pointer; transition: all 0.3s;"></span>
-                    <span class="tour-dot" data-step="3" style="width: 10px; height: 10px; border-radius: 50%; background: var(--gray-300); cursor: pointer; transition: all 0.3s;"></span>
-                </div>
-                
-                <!-- 步骤内容 -->
-                <div id="tour-content" style="min-height: 180px;">
-                    <!-- 步骤1 -->
-                    <div class="tour-step active" data-step="0" style="display: block; text-align: center; padding: 20px 10px;">
-                        <div style="font-size: 3rem; margin-bottom: 16px;"><i class="fas fa-bullseye" style="color: var(--primary-500);"></i></div>
-                        <h4 style="margin-bottom: 12px; color: var(--primary-700);">添加大目标</h4>
-                        <p style="color: var(--text-secondary); line-height: 1.6;">在左侧"目标管理"区域，填写目标名称、优先级、预估时间，点击添加按钮创建大目标。</p>
-                    </div>
-                    <!-- 步骤2 -->
-                    <div class="tour-step" data-step="1" style="display: none; text-align: center; padding: 20px 10px;">
-                        <div style="font-size: 3rem; margin-bottom: 16px;"><i class="fas fa-tasks" style="color: var(--accent-500);"></i></div>
-                        <h4 style="margin-bottom: 12px; color: var(--accent-700);">拆分子目标</h4>
-                        <p style="color: var(--text-secondary); line-height: 1.6;">点击大目标旁边的 <i class="fas fa-plus-circle" style="color: var(--primary-500);"></i> 按钮，为目标添加多个子目标，分配优先级和时间。</p>
-                    </div>
-                    <!-- 步骤3 -->
-                    <div class="tour-step" data-step="2" style="display: none; text-align: center; padding: 20px 10px;">
-                        <div style="font-size: 3rem; margin-bottom: 16px;"><i class="fas fa-magic" style="color: var(--success-500);"></i></div>
-                        <h4 style="margin-bottom: 12px; color: var(--success-700);">生成计划</h4>
-                        <p style="color: var(--text-secondary); line-height: 1.6;">设置计划的开始和结束日期，点击"生成计划"按钮，系统会自动为你分配每天的学习任务！</p>
-                    </div>
-                    <!-- 步骤4 -->
-                    <div class="tour-step" data-step="3" style="display: none; text-align: center; padding: 20px 10px;">
-                        <div style="font-size: 3rem; margin-bottom: 16px;"><i class="fas fa-archive" style="color: var(--warning-500);"></i></div>
-                        <h4 style="margin-bottom: 12px; color: var(--warning-700);">归档与设置</h4>
-                        <p style="color: var(--text-secondary); line-height: 1.6;">完成的计划会自动保存到"归档"。点击右上角"设置"可以自定义主题颜色、背景效果等！</p>
-                        <div style="margin-top: 18px; padding: 12px 16px; background: var(--primary-50); border: 1px solid var(--primary-200); border-radius: 10px;">
-                            <a href="javascript:void(0)" onclick="window.closeTourModal(); window.openDocsModal();" style="color: var(--primary-600); font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
-                                <i class="fas fa-book-open"></i> 点击跳转至使用文档以了解更详细的信息 →
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- 导航按钮 -->
-            <div style="display: flex; gap: 10px; margin-top: 20px;">
-                <button id="tour-prev" onclick="window.tourPrev()" class="btn-info" style="flex: 1; display: none;">上一步</button>
-                <button id="tour-next" onclick="window.tourNext()" class="btn-success" style="flex: 1;">下一步</button>
-                <button id="tour-finish" onclick="window.closeTourModal()" class="btn-success" style="flex: 1; display: none;">开始使用</button>
-            </div>
         </div>
     </div>
 
@@ -1907,8 +2071,6 @@
                 yellow: { 500: '#eab308', 600: '#ca8a04', 700: '#a16207', 50: '#fefce8', 100: '#fef9c3' }
             };
             let settings = { ...DEFAULT_SETTINGS };
-            window.currentTourStep = 0;
-
             function loadSettingsAndArchives() {
                 const savedSettings = localStorage.getItem('planSettings');
                 if (savedSettings) {
@@ -2414,75 +2576,83 @@
             window.openAboutModal  = () => openModal('about-modal');
             window.closeAboutModal = () => closeModal('about-modal');
             window.openTourModal   = () => { openModal('tour-modal'); window.resetTour(); };
-            window.closeTourModal  = () => closeModal('tour-modal');
+            window.closeTourModal  = () => { window.hideTourHighlight(); closeModal('tour-modal'); };
+            window.tourSkip = function() { window.hideTourHighlight(); closeModal('tour-modal'); };
+            // 更新进度条
+            window.updateTourProgress = function(step) {
+                const totalSteps = 4;
+                const percent = (step / (totalSteps - 1)) * 100;
+                const fill = document.getElementById('tour-progress-fill');
+                if (fill) fill.style.width = percent + '%';
+            };
+            // 显示高亮
+            window.showTourHighlight = function(step) {
+                window.hideTourHighlight();
+                const targetMap = { 0:'goals-section', 1:'goals-section', 2:'generate-plan', 3:'archives-section' };
+                const elId = targetMap[step];
+                const el = elId ? document.getElementById(elId) : null;
+                if (!el) return;
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                setTimeout(() => {
+                    const rect = el.getBoundingClientRect();
+                    const highlight = document.createElement('div');
+                    highlight.className = 'tour-highlight';
+                    highlight.id = 'tour-highlight';
+                    highlight.style.cssText = `top:${rect.top - 6}px;left:${rect.left - 6}px;width:${rect.width + 12}px;height:${rect.height + 12}px;`;
+                    document.body.appendChild(highlight);
+                }, 300);
+            };
+            // 隐藏高亮
+            window.hideTourHighlight = function() {
+                const h = document.getElementById('tour-highlight');
+                if (h) h.remove();
+            };
             window.resetTour = function() {
+                window.currentTourStep = 0;
                 document.querySelectorAll('.tour-step').forEach(s => s.style.display = 'none');
-                document.querySelectorAll('.tour-dot').forEach(d => d.style.background = 'var(--gray-300)');
                 document.querySelector('.tour-step[data-step="0"]').style.display = 'block';
-                document.querySelector('.tour-dot[data-step="0"]').style.background = 'var(--primary-500)';
                 document.getElementById('tour-prev').style.display = 'none';
                 document.getElementById('tour-next').style.display = 'block';
                 document.getElementById('tour-finish').style.display = 'none';
-                window.currentTourStep = 0;
+                const content = document.querySelector('#tour-modal .modal-content');
+                if (content) content.style.animation = 'none';
+                window.updateTourProgress(0);
+                window.showTourHighlight(0);
             };
             window.tourNext = function() {
                 const steps = document.querySelectorAll('.tour-step');
-                const dots = document.querySelectorAll('.tour-dot');
                 if (window.currentTourStep < steps.length - 1) {
                     steps[window.currentTourStep].style.display = 'none';
-                    dots[window.currentTourStep].style.background = 'var(--gray-300)';
                     window.currentTourStep++;
                     steps[window.currentTourStep].style.display = 'block';
-                    dots[window.currentTourStep].style.background = 'var(--primary-500)';
                     document.getElementById('tour-prev').style.display = 'block';
+                    window.updateTourProgress(window.currentTourStep);
+                    window.showTourHighlight(window.currentTourStep);
                     if (window.currentTourStep === steps.length - 1) {
                         document.getElementById('tour-next').style.display = 'none';
                         document.getElementById('tour-finish').style.display = 'block';
+                        const content = document.querySelector('#tour-modal .modal-content');
+                        if (content) content.style.animation = 'tourCelebrate 0.6s ease-out';
                     }
                 }
             };
             window.tourPrev = function() {
                 const steps = document.querySelectorAll('.tour-step');
-                const dots = document.querySelectorAll('.tour-dot');
                 if (window.currentTourStep > 0) {
                     steps[window.currentTourStep].style.display = 'none';
-                    dots[window.currentTourStep].style.background = 'var(--gray-300)';
                     window.currentTourStep--;
                     steps[window.currentTourStep].style.display = 'block';
-                    dots[window.currentTourStep].style.background = 'var(--primary-500)';
                     document.getElementById('tour-next').style.display = 'block';
                     document.getElementById('tour-finish').style.display = 'none';
+                    const content = document.querySelector('#tour-modal .modal-content');
+                    if (content) content.style.animation = 'none';
+                    window.updateTourProgress(window.currentTourStep);
+                    window.showTourHighlight(window.currentTourStep);
                     if (window.currentTourStep === 0) {
                         document.getElementById('tour-prev').style.display = 'none';
                     }
                 }
             };
-            // 点击圆点跳转
-            document.querySelectorAll('.tour-dot').forEach(dot => {
-                dot.addEventListener('click', function() {
-                    const step = parseInt(this.getAttribute('data-step'));
-                    const steps = document.querySelectorAll('.tour-step');
-                    const dots = document.querySelectorAll('.tour-dot');
-                    steps.forEach(s => s.style.display = 'none');
-                    dots.forEach(d => d.style.background = 'var(--gray-300)');
-                    steps[step].style.display = 'block';
-                    this.style.background = 'var(--primary-500)';
-                    window.currentTourStep = step;
-                    if (step === 0) {
-                        document.getElementById('tour-prev').style.display = 'none';
-                        document.getElementById('tour-next').style.display = 'block';
-                        document.getElementById('tour-finish').style.display = 'none';
-                    } else if (step === steps.length - 1) {
-                        document.getElementById('tour-prev').style.display = 'block';
-                        document.getElementById('tour-next').style.display = 'none';
-                        document.getElementById('tour-finish').style.display = 'block';
-                    } else {
-                        document.getElementById('tour-prev').style.display = 'block';
-                        document.getElementById('tour-next').style.display = 'block';
-                        document.getElementById('tour-finish').style.display = 'none';
-                    }
-                });
-            });
             window.openFeedback    = () => window.open(FEEDBACK_URL, '_blank');
 
             // ========== 使用文档（整页模式） ==========
@@ -2785,9 +2955,24 @@
                             else (settings.filterToday && isTaskExpired(s.deadline, start) ? expired : tasks).push(t);
                         });
                     } else {
-                        const t = { id: g.id, goalId: g.id, name: g.name, priority: g.priority, estimate: g.estimate, deadline: g.deadline, taskId: `${g.id}` };
-                        if (settings.showExpiredTasks) tasks.push(t);
-                        else (settings.filterToday && isTaskExpired(g.deadline, start) ? expired : tasks).push(t);
+                        // 无子目标的大目标：若估计时间超过一天容量，拆分为带编号的多个任务
+                        const perDay = effectiveDaily;
+                        if (g.estimate > perDay) {
+                            const days = Math.ceil(g.estimate / perDay);
+                            for (let i = 1; i <= days; i++) {
+                                const chunk = perDay * i <= g.estimate ? perDay : g.estimate - perDay * (i - 1);
+                                const ratio = i / days;
+                                const splitDeadline = new Date(new Date(start).getTime() + (new Date(g.deadline).getTime() - new Date(start).getTime()) * ratio);
+                                const y = splitDeadline.getFullYear(), m = String(splitDeadline.getMonth() + 1).padStart(2, '0'), d = String(splitDeadline.getDate()).padStart(2, '0');
+                                const t = { id: `${g.id}-split-${i}`, goalId: g.id, name: `${g.name} ${i}`, priority: g.priority, estimate: chunk, deadline: `${y}-${m}-${d}`, taskId: `${g.id}-split-${i}` };
+                                if (settings.showExpiredTasks) tasks.push(t);
+                                else (settings.filterToday && isTaskExpired(t.deadline, start) ? expired : tasks).push(t);
+                            }
+                        } else {
+                            const t = { id: g.id, goalId: g.id, name: g.name, priority: g.priority, estimate: g.estimate, deadline: g.deadline, taskId: `${g.id}` };
+                            if (settings.showExpiredTasks) tasks.push(t);
+                            else (settings.filterToday && isTaskExpired(g.deadline, start) ? expired : tasks).push(t);
+                        }
                     }
                 });
                 
@@ -3204,7 +3389,7 @@
                 }); 
             }
             
-            const ALL_MODAL_IDS = ['settings-modal','about-modal','tour-modal','error-modal','import-modal','export-modal','add-subgoal-modal','goal-modal','subgoal-modal'];
+            const ALL_MODAL_IDS = ['settings-modal','about-modal','error-modal','import-modal','export-modal','add-subgoal-modal','goal-modal','subgoal-modal'];
             ALL_MODAL_IDS.forEach(id => { 
                 const modal = document.getElementById(id);
                 if (modal) modal.addEventListener('click', e => { 
@@ -3226,12 +3411,11 @@
                 } 
             });
             
+            document.querySelectorAll('.version-number').forEach(el => el.textContent = APP_VERSION);
             if (!localStorage.getItem(TOUR_SEEN_KEY)) { 
                 setTimeout(() => window.openTourModal(), 500); 
                 localStorage.setItem(TOUR_SEEN_KEY, 'true'); 
             }
-            
-            document.querySelectorAll('.version-number').forEach(el => el.textContent = APP_VERSION);
             renderGoals(); 
             applyThemeAndAnimation(); 
             applyBackgroundEffect();
@@ -3315,6 +3499,234 @@
                 }
             }, MIN_DISPLAY_TIME + 2500);
         })();
+    </script>
+
+    <!-- ========== PWA 今日任务视图 JS ========== -->
+    <script>
+    (function() {
+        'use strict';
+
+        const TODAY_SNAP_KEY = 'plannerTodaySnapshot';
+        const COMPLETED_SNAP_KEY = 'plannerTodayCompleted';
+
+        // ---- 工具函数 ----
+        function getTodayStr() {
+            const d = new Date();
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
+        }
+
+        function formatDateCN(str) {
+            if (!str) return '';
+            const [y, m, d] = str.split('-');
+            const weekDays = ['日','一','二','三','四','五','六'];
+            const date = new Date(`${str}T12:00:00`);
+            return `${m}月${d}日 周${weekDays[date.getDay()]}`;
+        }
+
+        // ---- 保存今日快照（由计划生成后调用） ----
+        window.savePWATodaySnapshot = function() {
+            try {
+                const today = getTodayStr();
+                const table = document.getElementById('plan-table');
+                if (!table || table.rows.length <= 1) return;
+                const rows = table.querySelectorAll('tbody tr');
+                const tasks = [];
+                rows.forEach(row => {
+                    const dateCell = row.cells[0];
+                    const taskCell = row.cells[1];
+                    if (!dateCell || !taskCell) return;
+                    // 尝试匹配今日：格式化后的文字匹配今天
+                    const cellText = dateCell.textContent.trim();
+                    // 把今天的 YYYY-MM-DD 格式化为与表格一致
+                    const todayFormatted = formatDateCN(today);
+                    // 也直接用原始日期字符串匹配
+                    if (!cellText.includes(today) && cellText !== todayFormatted) return;
+                    const items = taskCell.querySelectorAll('.task-item');
+                    items.forEach(item => {
+                        const cb = item.querySelector('.task-checkbox');
+                        const label = item.querySelector('.task-label');
+                        const timeSpan = item.querySelector('span:last-child');
+                        if (!label) return;
+                        const priorityMatch = [...label.classList].find(c => c.startsWith('priority-'));
+                        const priority = priorityMatch ? priorityMatch.replace('priority-', '') : 'medium';
+                        tasks.push({
+                            taskId: cb ? cb.dataset.taskId : Math.random().toString(36).slice(2),
+                            name: label.textContent.trim(),
+                            time: timeSpan ? timeSpan.textContent.trim() : '',
+                            priority: priority
+                        });
+                    });
+                });
+                const snapshot = { date: today, tasks };
+                localStorage.setItem(TODAY_SNAP_KEY, JSON.stringify(snapshot));
+            } catch (e) { /* 静默失败 */ }
+        };
+
+        // ---- 渲染今日视图 ----
+        function renderPWATodayView() {
+            const today = getTodayStr();
+            const snapRaw = localStorage.getItem(TODAY_SNAP_KEY);
+            const completedRaw = localStorage.getItem(COMPLETED_SNAP_KEY);
+            let completed = {};
+            try { completed = JSON.parse(completedRaw) || {}; } catch(e) {}
+
+            const view = document.getElementById('pwa-today-view');
+            const list = document.getElementById('pwa-task-list');
+            const badge = document.getElementById('pwa-date-badge');
+            const fill = document.getElementById('pwa-progress-fill');
+            const progressText = document.getElementById('pwa-progress-text');
+
+            badge.textContent = formatDateCN(today);
+
+            if (!snapRaw) {
+                list.innerHTML = `
+                    <div class="pwa-no-task">
+                        <div class="pwa-no-task-icon">📅</div>
+                        <p>今天暂无任务</p>
+                        <small>请先在完整视图中生成计划</small>
+                    </div>`;
+                fill.style.width = '0%';
+                progressText.textContent = '';
+                return;
+            }
+
+            let snap;
+            try { snap = JSON.parse(snapRaw); } catch(e) {
+                list.innerHTML = `<div class="pwa-no-task"><div class="pwa-no-task-icon">⚠️</div><p>数据读取失败</p></div>`;
+                return;
+            }
+
+            if (snap.date !== today || !snap.tasks || snap.tasks.length === 0) {
+                list.innerHTML = `
+                    <div class="pwa-no-task">
+                        <div class="pwa-no-task-icon">🎉</div>
+                        <p>今天没有安排任务</p>
+                        <small>好好休息，或去完整视图查看计划</small>
+                    </div>`;
+                fill.style.width = '0%';
+                progressText.textContent = '';
+                return;
+            }
+
+            const tasks = snap.tasks;
+            const doneCount = tasks.filter(t => completed[t.taskId]).length;
+            const total = tasks.length;
+            const pct = total > 0 ? Math.round(doneCount / total * 100) : 0;
+            fill.style.width = pct + '%';
+            progressText.textContent = `已完成 ${doneCount} / ${total} 项 · ${pct}%`;
+
+            list.innerHTML = '';
+            tasks.forEach(t => {
+                const isDone = !!completed[t.taskId];
+                const card = document.createElement('div');
+                card.className = 'pwa-task-card' + (isDone ? ' done' : '');
+
+                const cb = document.createElement('input');
+                cb.type = 'checkbox';
+                cb.className = 'pwa-task-cb';
+                cb.checked = isDone;
+                cb.addEventListener('change', () => {
+                    completed[t.taskId] = cb.checked;
+                    localStorage.setItem(COMPLETED_SNAP_KEY, JSON.stringify(completed));
+                    card.classList.toggle('done', cb.checked);
+                    // 更新进度
+                    const newDone = tasks.filter(tk => completed[tk.taskId]).length;
+                    const newPct = total > 0 ? Math.round(newDone / total * 100) : 0;
+                    fill.style.width = newPct + '%';
+                    progressText.textContent = `已完成 ${newDone} / ${total} 项 · ${newPct}%`;
+                });
+
+                const info = document.createElement('div');
+                info.className = 'pwa-task-info';
+                const name = document.createElement('div');
+                name.className = 'pwa-task-name';
+                name.textContent = t.name;
+                const meta = document.createElement('div');
+                meta.className = 'pwa-task-meta';
+                const dot = document.createElement('span');
+                dot.className = `pwa-priority-dot ${t.priority}`;
+                const priorityLabel = { high: '高优先级', medium: '中优先级', low: '低优先级' };
+                dot.title = priorityLabel[t.priority] || '';
+                const timeEl = document.createElement('span');
+                timeEl.className = 'pwa-task-time';
+                timeEl.textContent = t.time;
+                meta.appendChild(dot);
+                meta.appendChild(timeEl);
+                info.appendChild(name);
+                info.appendChild(meta);
+
+                card.appendChild(cb);
+                card.appendChild(info);
+                list.appendChild(card);
+            });
+        }
+
+        // ---- 切换到完整视图 ----
+        window.pwaSwitchToFull = function() {
+            document.getElementById('pwa-today-view').classList.remove('active');
+            // 如有加载遮罩，确保已隐藏
+            const overlay = document.getElementById('loading-overlay');
+            if (overlay) overlay.style.display = 'none';
+        };
+
+        // ---- 判断是否以 PWA standalone 模式启动 ----
+        function isPWAStandalone() {
+            return window.navigator.standalone === true ||
+                   window.matchMedia('(display-mode: standalone)').matches ||
+                   new URL(location.href).searchParams.get('source') === 'pwa' ||
+                   new URL(location.href).searchParams.get('view') === 'today';
+        }
+
+        // ---- 页面就绪后决定是否展示今日视图 ----
+        function initPWA() {
+            // 注册 Service Worker
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/sw.js').catch(() => {});
+            }
+
+            if (isPWAStandalone()) {
+                const view = document.getElementById('pwa-today-view');
+                // 同步主题（避免闪白）
+                const saved = localStorage.getItem('planSettings');
+                if (saved) {
+                    try {
+                        const s = JSON.parse(saved);
+                        if (s.theme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+                        if (s.primary) document.documentElement.setAttribute('data-primary', s.primary);
+                    } catch(e) {}
+                }
+                view.classList.add('active');
+                renderPWATodayView();
+
+                // 隐藏加载遮罩（PWA 视图不需要等主应用加载）
+                const overlay = document.getElementById('loading-overlay');
+                if (overlay) overlay.style.display = 'none';
+            }
+        }
+
+        // DOM 就绪后初始化
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initPWA);
+        } else {
+            initPWA();
+        }
+
+        // ---- 钩子：计划生成后自动保存今日快照 ----
+        // 等主 JS 初始化完成后再挂钩
+        window.addEventListener('load', function() {
+            const btn = document.getElementById('generate-plan');
+            if (btn) {
+                btn.addEventListener('click', function() {
+                    // 延迟等计划表渲染完成
+                    setTimeout(() => { window.savePWATodaySnapshot && window.savePWATodaySnapshot(); }, 300);
+                });
+            }
+        });
+
+    })();
     </script>
 </body>
 </html>

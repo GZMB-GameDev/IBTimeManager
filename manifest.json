@@ -1,0 +1,36 @@
+{
+  "name": "PlannerPro 规划师",
+  "short_name": "规划师",
+  "description": "智能时间规划工具，管理目标与每日任务",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f6f9fc",
+  "theme_color": "#3b82f6",
+  "lang": "zh-CN",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "今日任务",
+      "short_name": "今日",
+      "description": "查看今天的任务列表",
+      "url": "/?view=today",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "categories": ["productivity", "utilities"]
+}
